@@ -138,7 +138,36 @@
   .rpt-legend span{display:inline-flex;align-items:center;gap:4px}
   .rpt-legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
   tr,td,th{page-break-inside:avoid}
+  /* ---- cloud / Google Drive UI ---- */
+  .menu{position:relative;display:inline-block}
+  .menu-pop{position:absolute;right:0;top:calc(100% + 6px);background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 22px rgba(0,0,0,.22);min-width:236px;padding:6px;z-index:120;display:none}
+  .menu-pop.show{display:block}
+  .menu-pop button{display:flex;width:100%;align-items:center;gap:8px;background:transparent;border:0;text-align:left;padding:8px 10px;border-radius:6px;font-size:13px;color:var(--ink);cursor:pointer;font-weight:500}
+  .menu-pop button:hover{background:#eef2f8}
+  .menu-pop .sep{height:1px;background:var(--line);margin:5px 2px}
+  .menu-pop .mlabel{font-size:11px;color:var(--muted);padding:5px 10px 3px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}
+  .modal-bg{position:fixed;inset:0;background:rgba(15,23,38,.55);z-index:300;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+  .modal-bg.show{display:flex}
+  .modal{background:#fff;border-radius:12px;max-width:560px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3);overflow:hidden}
+  .modal-head{background:var(--navy);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+  .modal-head h3{margin:0;font-size:15px;font-weight:600}
+  .modal-head .x{cursor:pointer;font-size:22px;line-height:1;opacity:.85;background:none;border:0;color:#fff}
+  .modal-head .x:hover{opacity:1}
+  .modal-body{padding:18px;font-size:13px}
+  .modal-body p{margin:0 0 10px}
+  .modal-body ol{margin:0 0 12px;padding-left:20px}
+  .modal-body li{margin-bottom:5px}
+  .modal-body code{background:#eef2f8;padding:2px 6px;border-radius:4px;font-size:12px;word-break:break-all}
+  .modal-foot{display:flex;gap:8px;justify-content:flex-end;padding:14px 18px;border-top:1px solid var(--line);background:#f7f9fc}
+  .drive-list{list-style:none;margin:0;padding:0;max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+  .drive-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+  .drive-list li:last-child{border-bottom:0}
+  .drive-list li.info{cursor:default}
+  .drive-list li:not(.info):hover{background:#eef2f8}
+  .drive-list .fn{font-weight:600;color:var(--navy);font-size:13px}
+  .drive-list .fm{font-size:11px;color:var(--muted)}
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div class="topbar">
@@ -147,6 +176,18 @@
   <button class="btn ghost sm" onclick="document.getElementById('loadFile').click()">Open…</button>
   <input type="file" id="loadFile" accept=".json" style="display:none" onchange="loadFromFile(event)">
   <button class="btn sm" onclick="saveJSON()">Save (.json)</button>
+  <div class="menu">
+    <button class="btn sm" id="driveBtn" onclick="toggleDriveMenu(event)">&#9729; Drive &#9662;</button>
+    <div class="menu-pop" id="driveMenu">
+      <div class="mlabel" id="driveLinked">Not linked to a Drive file</div>
+      <button onclick="driveSave()">&#9729; Save to Drive</button>
+      <button onclick="driveSaveAsNew()">&#10133; Save as new file&hellip;</button>
+      <button onclick="openDriveOpen()">&#128194; Open from Drive&hellip;</button>
+      <div class="sep"></div>
+      <button onclick="openDriveSettings()">&#9881; Drive settings&hellip;</button>
+      <button onclick="driveSignOut()" id="driveSignOutBtn" style="display:none">Sign out of Drive</button>
+    </div>
+  </div>
   <button class="btn primary sm" onclick="openPreview()">Preview / Print this tab</button>
 </div>
 
@@ -212,6 +253,46 @@
 
 <div id="printArea"></div>
 <div class="toast" id="toast"></div>
+
+<!-- Google Drive setup modal -->
+<div class="modal-bg" id="driveSettingsModal">
+  <div class="modal">
+    <div class="modal-head"><h3>&#9729; Google Drive setup</h3><button class="x" onclick="closeModal('driveSettingsModal')" title="Close">&times;</button></div>
+    <div class="modal-body">
+      <p>To save reports to your Google Drive, this app needs a free Google OAuth <b>Client ID</b>. This is a one-time setup and the ID is stored only in this browser.</p>
+      <ol>
+        <li>Open the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a> and create (or pick) a project.</li>
+        <li>In <b>APIs &amp; Services &rarr; Library</b>, enable the <b>Google Drive API</b>.</li>
+        <li>In <b>APIs &amp; Services &rarr; OAuth consent screen</b>, choose <b>External</b>, fill in an app name + your email, and add your Google account under <b>Test users</b>.</li>
+        <li>In <b>APIs &amp; Services &rarr; Credentials</b>, create an <b>OAuth client ID</b> of type <b>Web application</b>.</li>
+        <li>Under <b>Authorized JavaScript origins</b>, add this site's origin:<br><code id="originCode"></code></li>
+        <li>Copy the Client ID and paste it below.</li>
+      </ol>
+      <div class="fld"><label>OAuth Client ID</label>
+        <input id="clientIdInput" placeholder="1234567890-abc123.apps.googleusercontent.com"></div>
+      <p class="hint" style="margin-top:8px">Uses the <code>drive.file</code> scope, so the app can only see the files it creates here &mdash; never the rest of your Drive.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('driveSettingsModal')">Cancel</button>
+      <button class="btn primary" onclick="saveClientId()">Save Client ID</button>
+    </div>
+  </div>
+</div>
+
+<!-- Open from Drive modal -->
+<div class="modal-bg" id="driveOpenModal">
+  <div class="modal">
+    <div class="modal-head"><h3>&#128194; Open from Google Drive</h3><button class="x" onclick="closeModal('driveOpenModal')" title="Close">&times;</button></div>
+    <div class="modal-body">
+      <p class="hint">Reports this app has saved to your Drive. Click one to load it.</p>
+      <ul class="drive-list" id="driveFileList"></ul>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('driveOpenModal')">Close</button>
+      <button class="btn" onclick="refreshDriveList()">&#8635; Refresh</button>
+    </div>
+  </div>
+</div>
 
 <datalist id="dl_proc"></datalist>
 <datalist id="dl_chem"></datalist>
@@ -499,7 +580,7 @@ function saveJSON(){
 function loadFromFile(ev){
   const f=ev.target.files[0]; if(!f) return;
   const r=new FileReader();
-  r.onload=()=>{ try{ state=normalizeState(JSON.parse(r.result)); fillMetaInputs(); renderHaz(); renderProg(); toast('Loaded "'+f.name+'".'); }catch(e){ alert('Could not read file: '+e.message);} };
+  r.onload=()=>{ try{ state=normalizeState(JSON.parse(r.result)); setLinked(null); fillMetaInputs(); renderHaz(); renderProg(); toast('Loaded "'+f.name+'".'); }catch(e){ alert('Could not read file: '+e.message);} };
   r.readAsText(f); ev.target.value='';
 }
 function normalizeState(d){
@@ -512,7 +593,7 @@ function normalizeState(d){
   d.meta={siteType:d.meta.siteType||'',site:d.meta.site||'',addr:d.meta.addr||'',rpuid:d.meta.rpuid||'',bldg:d.meta.bldg||'',date:d.meta.date||'',surveyor:d.meta.surveyor||''};
   return d;
 }
-function newSurvey(){ if((state.processes.length||state.programs.length) && !confirm('Start a new blank report? Unsaved changes will be lost.')) return; state=blankState(); fillMetaInputs(); renderHaz(); renderProg(); }
+function newSurvey(){ if((state.processes.length||state.programs.length) && !confirm('Start a new blank report? Unsaved changes will be lost.')) return; state=blankState(); setLinked(null); fillMetaInputs(); renderHaz(); renderProg(); }
 
 function autosave(){ try{localStorage.setItem('ih_report_autosave',JSON.stringify(state));}catch(e){} }
 function tryRestore(){ try{const s=localStorage.getItem('ih_report_autosave'); if(s){const d=JSON.parse(s); if(d&&((d.processes&&d.processes.length)||(d.programs&&d.programs.length))){state=normalizeState(d);} }}catch(e){} }
@@ -604,9 +685,182 @@ window.addEventListener('beforeprint',()=>{ const a=document.getElementById('pri
 let toastTimer=null;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600); }
 
+/* ===================== Google Drive cloud sync ===================== */
+/* Client-side only: Google Identity Services for OAuth + Drive REST API.
+   Scope drive.file = the app can see ONLY the files it creates here. */
+const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
+const CLIENT_ID_KEY='ih_gdrive_client_id';
+const LINKED_KEY='ih_gdrive_linked';
+let tokenClient=null, accessToken=null, tokenExpiry=0, pendingAuth=null, tokenClientId=null;
+let linkedFile=loadLinked();   // {id,name} of the Drive file this report is tied to, or null
+
+function getClientId(){ return (localStorage.getItem(CLIENT_ID_KEY)||'').trim(); }
+function loadLinked(){ try{ return JSON.parse(localStorage.getItem(LINKED_KEY)||'null'); }catch(e){ return null; } }
+function setLinked(f){ linkedFile=f||null; try{ f?localStorage.setItem(LINKED_KEY,JSON.stringify(f)):localStorage.removeItem(LINKED_KEY); }catch(e){} updateDriveUI(); }
+
+function updateDriveUI(){
+  const el=document.getElementById('driveLinked');
+  if(el) el.textContent=linkedFile ? ('Linked: '+linkedFile.name) : 'Not linked to a Drive file';
+  const so=document.getElementById('driveSignOutBtn');
+  if(so) so.style.display=accessToken?'flex':'none';
+}
+
+/* dropdown menu + modals */
+function toggleDriveMenu(ev){ ev.stopPropagation(); document.getElementById('driveMenu').classList.toggle('show'); updateDriveUI(); }
+document.addEventListener('click',()=>{ const m=document.getElementById('driveMenu'); if(m) m.classList.remove('show'); });
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+function openDriveSettings(){
+  document.getElementById('originCode').textContent=location.origin;
+  document.getElementById('clientIdInput').value=getClientId();
+  openModal('driveSettingsModal');
+}
+function saveClientId(){
+  const v=document.getElementById('clientIdInput').value.trim();
+  localStorage.setItem(CLIENT_ID_KEY,v);
+  tokenClient=null; accessToken=null; tokenExpiry=0; tokenClientId=null;   // re-init with new id
+  updateDriveUI(); closeModal('driveSettingsModal');
+  toast(v?'Drive Client ID saved.':'Client ID cleared.');
+}
+
+/* preflight: hosted site + client id required before any Drive call */
+function drivePreflight(){
+  if(location.protocol==='file:'){ alert('Google Drive sync needs the hosted site (an https:// URL), not the local file.\n\nOpen your GitHub Pages link and try again.'); return false; }
+  if(!getClientId()){ openDriveSettings(); return false; }
+  return true;
+}
+
+/* wait for the async GIS library, then get/refresh an access token */
+function waitForGoogle(){
+  return new Promise((resolve,reject)=>{
+    if(window.google&&google.accounts&&google.accounts.oauth2) return resolve();
+    let n=0; const t=setInterval(()=>{
+      if(window.google&&google.accounts&&google.accounts.oauth2){ clearInterval(t); resolve(); }
+      else if(++n>40){ clearInterval(t); reject(new Error('Google sign-in library did not load. Check your connection or any ad/script blocker.')); }
+    },150);
+  });
+}
+async function ensureToken(){
+  const cid=getClientId();
+  if(!cid){ openDriveSettings(); throw new Error('Add your Google OAuth Client ID first (Drive settings).'); }
+  if(accessToken && Date.now()<tokenExpiry) return accessToken;
+  await waitForGoogle();
+  if(!tokenClient || tokenClientId!==cid){
+    tokenClientId=cid;
+    tokenClient=google.accounts.oauth2.initTokenClient({
+      client_id:cid, scope:DRIVE_SCOPE,
+      callback:(resp)=>{
+        if(resp&&resp.error){ if(pendingAuth){ pendingAuth.reject(new Error(resp.error_description||resp.error)); pendingAuth=null; } return; }
+        accessToken=resp.access_token; tokenExpiry=Date.now()+((resp.expires_in||3600)*1000)-60000; updateDriveUI();
+        if(pendingAuth){ pendingAuth.resolve(accessToken); pendingAuth=null; }
+      }
+    });
+  }
+  return new Promise((resolve,reject)=>{
+    pendingAuth={resolve,reject};
+    try{ tokenClient.requestAccessToken({prompt:''}); }
+    catch(e){ pendingAuth=null; reject(e); }
+  });
+}
+function driveSignOut(){
+  if(accessToken && window.google&&google.accounts&&google.accounts.oauth2){ try{ google.accounts.oauth2.revoke(accessToken,()=>{}); }catch(e){} }
+  accessToken=null; tokenExpiry=0; updateDriveUI(); toast('Signed out of Drive.');
+}
+
+/* Drive REST helpers (multipart create, media update, list, download) */
+async function driveCreate(name,obj){
+  const token=await ensureToken();
+  const boundary='ihr'+Math.random().toString(36).slice(2);
+  const meta={name:name,mimeType:'application/json'};
+  const body='--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(meta)+
+    '\r\n--'+boundary+'\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify(obj,null,2)+'\r\n--'+boundary+'--';
+  const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,modifiedTime',{
+    method:'POST', headers:{Authorization:'Bearer '+token,'Content-Type':'multipart/related; boundary='+boundary}, body:body });
+  if(!res.ok) throw new Error('Create failed ('+res.status+'): '+await res.text());
+  return res.json();
+}
+async function driveUpdate(id,obj){
+  const token=await ensureToken();
+  const res=await fetch('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=media&fields=id,name,modifiedTime',{
+    method:'PATCH', headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'}, body:JSON.stringify(obj,null,2) });
+  if(res.status===404) return null;   // linked file was deleted in Drive
+  if(!res.ok) throw new Error('Save failed ('+res.status+'): '+await res.text());
+  return res.json();
+}
+async function driveListFiles(){
+  const token=await ensureToken();
+  const q=encodeURIComponent("mimeType='application/json' and trashed=false");
+  const res=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,modifiedTime)',{
+    headers:{Authorization:'Bearer '+token} });
+  if(!res.ok) throw new Error('List failed ('+res.status+'): '+await res.text());
+  return (await res.json()).files||[];
+}
+async function driveDownload(id){
+  const token=await ensureToken();
+  const res=await fetch('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media',{ headers:{Authorization:'Bearer '+token} });
+  if(!res.ok) throw new Error('Download failed ('+res.status+'): '+await res.text());
+  return res.json();
+}
+
+/* high-level actions wired to the menu */
+function defaultName(){ return (state.meta.site||'IH_report').replace(/[^\w\-]+/g,'_')+'_IH_report.json'; }
+async function driveSave(){
+  if(!drivePreflight()) return;
+  try{
+    if(linkedFile){
+      toast('Saving to Drive…');
+      const f=await driveUpdate(linkedFile.id,state);
+      if(!f){ setLinked(null); return driveSaveAsNew(); }   // deleted -> save as new
+      setLinked({id:f.id,name:f.name});
+      toast('Saved to Drive: '+f.name);
+    } else {
+      await driveSaveAsNew();
+    }
+  }catch(e){ alert('Drive save failed:\n'+e.message); }
+}
+async function driveSaveAsNew(){
+  if(!drivePreflight()) return;
+  try{
+    const name=prompt('Save to Google Drive as:', defaultName());
+    if(!name) return;
+    toast('Saving to Drive…');
+    const f=await driveCreate(/\.json$/i.test(name)?name:name+'.json', state);
+    setLinked({id:f.id,name:f.name});
+    toast('Saved to Drive: '+f.name);
+  }catch(e){ alert('Drive save failed:\n'+e.message); }
+}
+function openDriveOpen(){ if(!drivePreflight()) return; openModal('driveOpenModal'); refreshDriveList(); }
+async function refreshDriveList(){
+  const ul=document.getElementById('driveFileList');
+  ul.innerHTML='<li class="info"><span class="fm">Loading…</span></li>';
+  try{
+    const files=await driveListFiles();
+    if(!files.length){ ul.innerHTML='<li class="info"><span class="fm">No reports saved to this Drive yet. Use “Save to Drive” first.</span></li>'; return; }
+    ul.innerHTML='';
+    files.forEach(f=>{
+      const li=document.createElement('li');
+      li.innerHTML='<span class="fn"></span><span class="fm"></span>';
+      li.querySelector('.fn').textContent=f.name;
+      li.querySelector('.fm').textContent=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'';
+      li.onclick=()=>openDriveFile(f);
+      ul.appendChild(li);
+    });
+  }catch(e){ ul.innerHTML='<li class="info"><span class="fm">'+esc(e.message)+'</span></li>'; }
+}
+async function openDriveFile(f){
+  try{
+    toast('Opening…');
+    const data=await driveDownload(f.id);
+    state=normalizeState(data); fillMetaInputs(); renderHaz(); renderProg();
+    setLinked({id:f.id,name:f.name});
+    closeModal('driveOpenModal');
+    toast('Loaded from Drive: '+f.name);
+  }catch(e){ alert('Could not open file:\n'+e.message); }
+}
+
 document.addEventListener('input',autosave);
 document.addEventListener('click',()=>setTimeout(autosave,50));
-initDatalists(); initSiteTypes(); bindMeta(); tryRestore(); fillMetaInputs(); renderHaz(); renderProg();
+initDatalists(); initSiteTypes(); bindMeta(); tryRestore(); fillMetaInputs(); renderHaz(); renderProg(); updateDriveUI();
 </script>
 </body>
 </html>
