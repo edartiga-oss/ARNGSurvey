@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IH Report Builder — Hazards &amp; Program Review</title>
+<style>
+  :root{
+    --navy:#1f3a5f; --navy2:#2c5282; --steel:#4a6fa5; --bg:#eef1f5;
+    --card:#ffffff; --line:#cfd8e3; --ink:#1a2433;
+    --muted:#5b6b80; --accent:#2b6cb0; --green:#2f855a; --red:#c53030;
+    --chem:#b7791f; --phys:#2b6cb0; --bio:#2f855a; --ergo:#805ad5;
+    --eng:#2c7a7b; --admin:#3182ce; --ppe:#9c4221;
+    --rac12:#c53030; --rac3:#dd6b20; --rac4:#d69e2e; --rac5:#718096;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+  .topbar{position:sticky;top:0;z-index:50;background:var(--navy);color:#fff;padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+  .topbar h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.3px;flex:1;min-width:220px}
+  .topbar .brand{font-size:11px;opacity:.8;font-weight:400;display:block}
+  .btn{border:0;border-radius:6px;padding:8px 13px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--navy);transition:.15s;white-space:nowrap}
+  .btn:hover{background:#dbe6f5}
+  .btn.primary{background:var(--green);color:#fff}
+  .btn.primary:hover{background:#276749}
+  .btn.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5)}
+  .btn.ghost:hover{background:rgba(255,255,255,.12)}
+  .btn.sm{padding:4px 9px;font-size:12px}
+  .btn.danger{background:transparent;color:var(--red);border:1px solid var(--red)}
+  .btn.danger:hover{background:#fff0f0}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .panel h2{margin:0 0 14px;font-size:15px;color:var(--navy);border-bottom:2px solid var(--line);padding-bottom:8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .fld{display:flex;flex-direction:column;gap:3px}
+  .fld label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  input,select,textarea{font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+  textarea{resize:vertical;min-height:46px;line-height:1.4}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(43,108,176,.15)}
+  .row-inline{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .hint{font-size:12px;color:var(--muted);margin:2px 0 0}
+  /* tabs */
+  .tabbar{display:flex;gap:6px;max-width:1180px;margin:0 auto;padding:0 18px}
+  .tab{padding:10px 18px;background:#dde5ef;color:var(--navy);border-radius:9px 9px 0 0;cursor:pointer;font-weight:600;font-size:13.5px;border:1px solid var(--line);border-bottom:none;opacity:.7}
+  .tab.active{background:var(--card);opacity:1;box-shadow:0 -2px 4px rgba(0,0,0,.04)}
+  .tabwrap{background:var(--bg)}
+  /* hazard process cards */
+  .proc{border:1px solid var(--line);border-left:5px solid var(--steel);border-radius:9px;margin-bottom:16px;background:#fff;overflow:hidden}
+  .proc-head{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#f3f6fb;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .proc-head .pnum{background:var(--navy);color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+  .proc-head input.pname{font-size:15px;font-weight:600;border:1px solid transparent;background:transparent;flex:1;min-width:180px;color:var(--navy)}
+  .proc-head input.pname:hover{border-color:var(--line);background:#fff}
+  .proc-head .seg{font-size:11px;color:var(--muted);background:#e2e8f0;padding:2px 8px;border-radius:10px}
+  .proc-body{padding:6px 14px 14px}
+  .grp{margin-top:12px}
+  .grp-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:flex;align-items:center;gap:7px}
+  .dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+  .subgrp{margin:8px 0 4px;font-size:11px;font-weight:600;color:var(--muted)}
+  .item{display:flex;gap:7px;align-items:center;margin-bottom:6px}
+  .item input{flex:1}
+  .item .x{color:var(--red);cursor:pointer;font-weight:700;font-size:16px;line-height:1;padding:2px 6px;border-radius:4px;flex-shrink:0;user-select:none}
+  .item .x:hover{background:#fff0f0}
+  .add-link{font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;display:inline-block;margin-top:2px}
+  .add-link:hover{text-decoration:underline}
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:760px){.cols2{grid-template-columns:1fr}}
+  .empty{color:var(--muted);font-size:12px;font-style:italic}
+  .pairbox .item input.k{flex:0 0 32%}
+  /* program review cards */
+  .prog{border:1px solid var(--line);border-left:5px solid var(--admin);border-radius:9px;margin-bottom:14px;background:#fff;overflow:hidden}
+  .prog.na{opacity:.62;border-left-color:#a0aec0}
+  .prog-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f3f6fb;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .prog-head .pnum{background:var(--admin);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+  .prog-head .ptitle{font-weight:700;color:var(--navy);font-size:14px;flex:1;min-width:160px}
+  .prog-head .pstd{font-size:11px;color:var(--muted)}
+  .prog-body{padding:10px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+  @media(max-width:760px){.prog-body{grid-template-columns:1fr}}
+  .prog-body .full{grid-column:1/-1}
+  .racbadge{display:inline-block;min-width:30px;text-align:center;color:#fff;font-weight:700;border-radius:5px;padding:2px 8px;font-size:12px}
+  .rac-12{background:var(--rac12)} .rac-3{background:var(--rac3)} .rac-4{background:var(--rac4);color:#3a2e08} .rac-5{background:var(--rac5)} .rac-na{background:#cbd5e0;color:#4a5568}
+  #printArea{display:none}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.3);font-size:13px;z-index:200;opacity:0;transition:.25s;pointer-events:none}
+  .toast.show{opacity:1}
+  .muted-note{font-size:11px;color:var(--muted);margin-top:8px}
+  @media print{
+    @page{size:A4 landscape;margin:9mm}
+    body{background:#fff}
+    .topbar,.tabbar,.tabwrap,.wrap{display:none!important}
+    #printArea{display:block!important}
+    #printArea .nobar{display:none!important}
+    #printArea.preview{border:0!important;box-shadow:none!important;margin:0!important;padding:0!important;max-width:none!important}
+    table.rpt th,table.rpt td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+  #printArea.preview{display:block;background:#fff;max-width:1180px;margin:0 auto 30px;padding:22px;border:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+  .rpt-head{text-align:center;border-bottom:2.5px solid var(--navy);padding-bottom:8px;margin-bottom:10px}
+  .rpt-head h1{font-size:15px;margin:0 0 2px;color:var(--navy)}
+  .rpt-head .sub{font-size:11px;color:#333}
+  .rpt-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:2px 20px;font-size:9px;margin-bottom:10px}
+  .rpt-meta div{border-bottom:1px dotted #aaa;padding:1px 0}
+  .rpt-meta b{color:var(--navy)}
+  table.rpt{width:100%;border-collapse:collapse;table-layout:fixed}
+  table.rpt th,table.rpt td{border:.6px solid #6b7785;padding:2.5px 4px;vertical-align:top;font-size:8px;line-height:1.25;text-align:left;word-wrap:break-word}
+  table.rpt thead th{color:#fff;text-align:center;font-size:8px;font-weight:700}
+  table.rpt thead tr.grp th{background:var(--navy)}
+  table.rpt thead tr.grp .g-haz{background:#7b341e}
+  table.rpt thead tr.grp .g-ctrl{background:#234e52}
+  table.rpt thead th.h-chem{background:#b7791f}
+  table.rpt thead th.h-phys{background:#2b6cb0}
+  table.rpt thead th.h-bio{background:#2f855a}
+  table.rpt thead th.h-ergo{background:#6b46c1}
+  table.rpt thead th.h-eng{background:#2c7a7b}
+  table.rpt thead th.h-admin{background:#3182ce}
+  table.rpt thead th.h-ppe{background:#9c4221}
+  table.rpt .pcell{font-weight:700;background:#e7edf5;color:var(--navy)}
+  table.rpt .cnum{background:#f0f3f7;font-weight:700}
+  table.rpt td.c-chem{background:#fdf6e7}
+  table.rpt td.c-phys{background:#ecf3fb}
+  table.rpt td.c-bio{background:#ebf6ef}
+  table.rpt td.c-ergo{background:#f2edfa}
+  table.rpt td.c-eng{background:#e7f3f3}
+  table.rpt td.c-admin{background:#eaf2fc}
+  table.rpt td.c-ppe{background:#f9efe8}
+  table.rpt ul{margin:0;padding-left:12px}
+  table.rpt li{margin-bottom:1.5px}
+  table.rpt .none{color:#999;font-style:italic}
+  table.rpt .cmt{color:#555;font-style:italic}
+  /* program review print */
+  table.pr thead th{background:var(--navy)}
+  table.pr thead th.hp-prog{background:#234e52}
+  table.pr thead th.hp-def{background:#7b341e}
+  table.pr thead th.hp-rec{background:#22543d}
+  table.pr td.cp-prog{font-weight:700;background:#eef2f8;color:var(--navy)}
+  table.pr td.cp-std{background:#f4f7fb}
+  table.pr td.cp-def{background:#fdf0ec}
+  table.pr td.cp-rec{background:#edf6f0}
+  table.pr tr.row-na td{background:#f3f4f6;color:#888}
+  table.pr .rac{display:inline-block;min-width:16px;text-align:center;color:#fff;font-weight:700;border-radius:3px;padding:1px 4px}
+  .rpt-legend{font-size:8px;margin-top:8px;color:#444;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .rpt-legend span{display:inline-flex;align-items:center;gap:4px}
+  .rpt-legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
+  tr,td,th{page-break-inside:avoid}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>Industrial Hygiene Report Builder<span class="brand">Hazards table &amp; Program Review — data entry &amp; standardized printouts</span></h1>
+  <button class="btn ghost sm" onclick="newSurvey()">New</button>
+  <button class="btn ghost sm" onclick="document.getElementById('loadFile').click()">Open…</button>
+  <input type="file" id="loadFile" accept=".json" style="display:none" onchange="loadFromFile(event)">
+  <button class="btn sm" onclick="saveJSON()">Save (.json)</button>
+  <button class="btn primary sm" onclick="openPreview()">Preview / Print this tab</button>
+</div>
+
+<div class="tabbar">
+  <div class="tab active" id="tab-haz" onclick="switchTab('haz')">Hazards &amp; Controls</div>
+  <div class="tab" id="tab-prog" onclick="switchTab('prog')">Program Review</div>
+</div>
+
+<div class="tabwrap">
+<div class="wrap">
+  <!-- shared site info -->
+  <div class="panel">
+    <h2>Site Information <span style="font-size:11px;font-weight:400;color:var(--muted)">(shared by both tabs)</span></h2>
+    <div class="grid">
+      <div class="fld"><label>Site Type</label>
+        <select id="siteType" onchange="onSiteTypeChange()"></select></div>
+      <div class="fld"><label>Site Name</label><input id="m_site" placeholder="e.g. AASF #1"></div>
+      <div class="fld"><label>Address</label><input id="m_addr" placeholder="Street, City, ST ZIP"></div>
+      <div class="fld"><label>RPUID</label><input id="m_rpuid"></div>
+      <div class="fld"><label>Building #</label><input id="m_bldg"></div>
+      <div class="fld"><label>Survey Date</label><input id="m_date" type="date"></div>
+      <div class="fld"><label>Surveyor / IH</label><input id="m_surveyor"></div>
+    </div>
+  </div>
+
+  <!-- TAB 1: hazards -->
+  <div id="pane-haz">
+    <div class="panel">
+      <div class="row-inline" style="margin-bottom:8px">
+        <button class="btn primary" onclick="loadStandardProcesses()">&#8635; Load standard processes for this site type</button>
+        <span class="hint" id="stdHint"></span>
+      </div>
+      <h2>Processes, Hazards &amp; Controls</h2>
+      <div id="procList"></div>
+      <div class="row-inline" style="margin-top:12px">
+        <div class="fld" style="flex:1;max-width:340px"><label>Add a process</label>
+          <input id="newProc" list="dl_proc" placeholder="Pick or type a process name…"></div>
+        <button class="btn" onclick="addProcessFromInput()">+ Add process</button>
+      </div>
+      <p class="muted-note">Tip: every field is a dropdown you can also type into.</p>
+    </div>
+  </div>
+
+  <!-- TAB 2: program review -->
+  <div id="pane-prog" style="display:none">
+    <div class="panel">
+      <div class="row-inline" style="margin-bottom:8px">
+        <button class="btn primary" onclick="loadStandardPrograms()">&#8635; Load standard program checklist</button>
+        <span class="hint">19 standard OSHA / Army programs with typical notes, deficiencies &amp; recommendations pre-filled.</span>
+      </div>
+      <h2>Program Review, Deficiencies &amp; Recommendations</h2>
+      <div id="progListEl"></div>
+      <div class="row-inline" style="margin-top:12px">
+        <div class="fld" style="flex:1;max-width:340px"><label>Add a program / standard</label>
+          <input id="newProg" placeholder="Program name…"></div>
+        <button class="btn" onclick="addProgramFromInput()">+ Add program</button>
+      </div>
+      <p class="muted-note">Set <b>Applicable</b> to No to mark a program Not Applicable. RAC color: <span class="racbadge rac-12">1-2</span> <span class="racbadge rac-3">3</span> <span class="racbadge rac-4">4</span> <span class="racbadge rac-5">5</span> <span class="racbadge rac-na">N/A</span></p>
+    </div>
+  </div>
+</div>
+</div>
+
+<div id="printArea"></div>
+<div class="toast" id="toast"></div>
+
+<datalist id="dl_proc"></datalist>
+<datalist id="dl_chem"></datalist>
+<datalist id="dl_phys"></datalist>
+<datalist id="dl_bio"></datalist>
+<datalist id="dl_ergo"></datalist>
+<datalist id="dl_eng"></datalist>
+<datalist id="dl_admin"></datalist>
+<datalist id="dl_admindesc"></datalist>
+<datalist id="dl_ppe"></datalist>
+<datalist id="dl_ppedesc"></datalist>
+<datalist id="dl_ppecomment"></datalist>
+<datalist id="dl_pnotes"></datalist>
+<datalist id="dl_pdef"></datalist>
+<datalist id="dl_prec"></datalist>
+
+<script>
+const LIBRARY = {"meta": {"title": "Industrial Hygiene Hazard, Controls & Process Table"}, "siteTypes": {"AASF": {"name": "Army Aviation Support Facility", "example": "AASF #1 / AASF #4 (TX)", "segs": {"Maintenance": ["Aircraft Maintenance", "ALSE Repair", "Flammable/Combustible Storage", "Aircraft Refueling"], "Fabrication": ["Grinding/Cutting", "Blade Repair", "Painting/Stenciling"], "Avionics and Electronics Maintenance": ["Electronics Repair/Soldering"], "Inspection and Test Flight": ["Engine Test"], "Administrative Operations": ["Administrative Operations", "Warehousing/Storage"]}, "processes": ["Aircraft Maintenance", "ALSE Repair", "Flammable/Combustible Storage", "Aircraft Refueling", "Grinding/Cutting", "Blade Repair", "Painting/Stenciling", "Electronics Repair/Soldering", "Engine Test", "Administrative Operations", "Warehousing/Storage"]}, "CSMS": {"name": "Combined Support Maintenance Shop", "example": "CSMS #2 (TX)", "segs": {"Vehicle Maintenance": ["Vehicle Maintenance", "Battery Charging/Storage", "Brake System Repair", "Parts Washing", "Welding/Grinding/Cutting", "Machining", "Sanding/Grinding", "Painting/Stenciling", "Woodworking", "Flammable/Combustible Storage", "Electronics Repair/Soldering", "Weapons Maintenance/Repair", "Calibration"], "Administrative Operations": ["Administrative Operations", "Warehousing/Storage"]}, "processes": ["Vehicle Maintenance", "Battery Charging/Storage", "Brake System Repair", "Parts Washing", "Welding/Grinding/Cutting", "Machining", "Sanding/Grinding", "Painting/Stenciling", "Woodworking", "Flammable/Combustible Storage", "Electronics Repair/Soldering", "Weapons Maintenance/Repair", "Calibration", "Administrative Operations", "Warehousing/Storage"]}, "FMS": {"name": "Field Maintenance Shop", "example": "FMS #23 (TX)", "segs": {"Vehicle Maintenance": ["Vehicle Maintenance", "Battery Charging", "Painting/Stenciling", "Brake System Repair", "Welding/Grinding/Cutting", "Sanding/Grinding", "Flammable/Combustible Storage"], "Administrative Operations": ["Administrative Operations"]}, "processes": ["Vehicle Maintenance", "Battery Charging", "Painting/Stenciling", "Brake System Repair", "Welding/Grinding/Cutting", "Sanding/Grinding", "Flammable/Combustible Storage", "Administrative Operations"]}, "MATES": {"name": "Mobilization and Training Equipment Site", "example": "MATES Gatesville (TX)", "segs": {"Vehicle Maintenance": ["Vehicle Maintenance", "Battery Charging/Storage", "Brake System Repair", "Abrasive Blasting Booth", "Parts Washing", "Welding", "Sanding/Grinding", "Painting/Stenciling", "Paint Booth Operations", "Woodworking", "Flammable/Combustible Storage", "Electronics Repair/Soldering", "Weapons Maintenance", "Warehousing/Storage"], "Administrative Operations": ["Administrative Operations"]}, "processes": ["Vehicle Maintenance", "Battery Charging/Storage", "Brake System Repair", "Abrasive Blasting Booth", "Parts Washing", "Welding", "Sanding/Grinding", "Painting/Stenciling", "Paint Booth Operations", "Woodworking", "Flammable/Combustible Storage", "Electronics Repair/Soldering", "Weapons Maintenance", "Warehousing/Storage", "Administrative Operations"]}, "UTES": {"name": "Unit Training Equipment Site", "example": "UTES #3 Bastrop (TX)", "segs": {"Vehicle Maintenance": ["Vehicle Maintenance", "Battery Charging/Storage", "Painting/Stenciling", "Brake System Repair", "Sanding/Grinding/Cutting", "Flammable/Combustible Storage"], "Administrative Operations": ["Administrative Operations"]}, "processes": ["Vehicle Maintenance", "Battery Charging/Storage", "Painting/Stenciling", "Brake System Repair", "Sanding/Grinding/Cutting", "Flammable/Combustible Storage", "Administrative Operations"]}}, "processDefaults": {"Aircraft Maintenance": {"chemical": ["Toluene - PPG PR1440 A 1/2 Part B / Flamemaster Fuel Tank Sealant / PPG PS 870 A Part B / Corrosion Prevention Compound Triethylene Glycol", "Dimethacrylate - SAF-T-LOK Grade A/B/C", "Formaldehyde - PPG PR 1005L", "Methyl Ethyl Ketone - 3M Scotch-Weld EC-3917", "Epichlorohydrin - Loctite EA 9359.3", "Titanium Dioxide - PPG PS 870 A Part B", "Acetone - 3M Scotch-Weld Adhesive EC-1357", "Dichloromethane - Hylomar Aerograde PL32", "Isocyanates - Henkel Loctite 640/MIL-DTL-64159B/ AER S2FIX Trimethylcyclohexylmeth-", "acrylate - Henkel Loctite 270 Ethyle 2 Cyanoacrylate - Henkel Loctite 401 Isopropyl Alcohol", "Xylene - Pacific West Degreaser", "Ethylene Glycol - MIL-PRF- 85704 Type 2", "Tetrafluoroethane - MIL- PRF-81309H Methylene Chloride - Stripper 11"], "physical": ["Noise", "Thermal Stress"], "biological": [], "ergonomic": ["Forceful Exertion", "Static Work", "Dynamic Work", "Heavy Lifting"], "eng": [], "admin": [{"name": "HAZCOM", "desc": "SDS Binders/Training"}, {"name": "Hearing Conservation", "desc": "Training/Audiograms"}, {"name": "Personal Protection", "desc": "Program/Signage/"}, {"name": "Confined Space", "desc": "Training"}, {"name": "Respiratory", "desc": "Program/Training"}, {"name": "Protection", "desc": "Program/Fit Testing/"}, {"name": "", "desc": "Training"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "Clear Safety Glasses"}, {"name": "Hearing", "desc": "Earplugs", "comment": "Sound Guard - Manufacturer NRR 29"}, {"name": "Clothing/Hand", "desc": "Nitrile Gloves", "comment": "ULINE General Purpose Nitrile Gloves"}, {"name": "Respirator", "desc": "Full Face", "comment": "3M Full Face 7800S"}, {"name": "Additional PPE", "desc": "Half Face", "comment": "3M Half Face 7503"}]}, "Grinding/Cutting": {"chemical": ["Hexavalent Chromium Cadmium Lead Iron Lead Manganese"], "physical": ["Noise", "Thermal Stress"], "biological": [], "ergonomic": ["Hand/Arm Vibration", "Forceful Exertion", "Static Work", "Dynamic Work"], "eng": [], "admin": [{"name": "HAZCOM", "desc": "SDS Binders/Training"}, {"name": "Hearing Conservation", "desc": "Training/Audiograms"}, {"name": "Personal Protection", "desc": "Program/Signage/"}, {"name": "Respiratory Protection", "desc": "Training"}, {"name": "", "desc": "Program/Fit Testing/"}, {"name": "", "desc": "Training"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "Clear Safety Glasses"}, {"name": "Hearing", "desc": "Earplugs", "comment": "Sound Guard - Manufacturer NRR 29"}, {"name": "Clothing/Hand", "desc": "Nitrile Gloves", "comment": "ULINE General Purpose Nitrile Gloves"}, {"name": "Respirator", "desc": "Full Face", "comment": "3M Full Face 7800S"}, {"name": "Additional PPE", "desc": "Half Face", "comment": "3M Half Face 7503"}]}, "Painting/Stenciling": {"chemical": ["Acetone - Corrosion Prevention Compound / 1K Polyurethane", "Toluene - Corrosion Prevention Compound Tetrafluoroethane - Corrosion Prevention Compound", "Xylene - 1K Polyurethane", "Isocyanates - Milspray Catalyst B"], "physical": [], "biological": [], "ergonomic": [], "eng": [], "admin": [{"name": "HAZCOM", "desc": "SDS Binders /Training"}, {"name": "Personal Protection", "desc": "Program/Signage/"}, {"name": "Respiratory", "desc": "Training"}, {"name": "Protection", "desc": "Program/Fit Testing/"}, {"name": "", "desc": "Training"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "Clear Safety Glasses"}, {"name": "Hearing", "desc": "Nitrile Gloves", "comment": "ULINE General Purpose Nitrile Gloves"}, {"name": "Clothing/Hand", "desc": "Full Face", "comment": "3M Full Face 7800S"}, {"name": "Respirator", "desc": "Half Face", "comment": "3M Half Face 7503"}, {"name": "Additional PPE", "desc": "", "comment": ""}]}, "ALSE Repair": {"chemical": [], "physical": [], "biological": [], "ergonomic": ["Static Work", "Visual Demand"], "eng": [], "admin": [], "ppe": [{"name": "Eye", "desc": "", "comment": ""}, {"name": "Hearing", "desc": "", "comment": ""}, {"name": "Clothing/Hand", "desc": "", "comment": ""}, {"name": "Respirator", "desc": "", "comment": ""}, {"name": "Additional PPE", "desc": "", "comment": ""}]}, "Electronics Repair/Soldering": {"chemical": ["Lead"], "physical": [], "biological": [], "ergonomic": ["Static Work"], "eng": ["SODRTEK FX 50", "Ventilation"], "admin": [{"name": "HAZCOM", "desc": "SDS Binders/Training"}, {"name": "Personal Protection", "desc": "Program/Signage/"}, {"name": "", "desc": "Training"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "Clear Safety Glasses"}, {"name": "Hearing", "desc": "Nitrile Gloves", "comment": "ULINE General Purpose Nitrile Gloves"}, {"name": "Clothing/Hand", "desc": "", "comment": ""}, {"name": "Respirator", "desc": "", "comment": ""}, {"name": "Additional PPE", "desc": "", "comment": ""}]}, "Blade Repair": {"chemical": [], "physical": [], "biological": [], "ergonomic": ["Static Work", "Visual Demand"], "eng": [], "admin": [], "ppe": [{"name": "Eye", "desc": "", "comment": ""}, {"name": "Hearing", "desc": "", "comment": ""}, {"name": "Clothing/Hand", "desc": "", "comment": ""}, {"name": "Respirator", "desc": "", "comment": ""}, {"name": "Additional PPE", "desc": "", "comment": ""}]}, "Engine Test": {"chemical": ["Diesel Particulate Matter Hydrocarbons Carbon Monxide"], "physical": ["Noise"], "biological": [], "ergonomic": ["Hand/Arm Vibration", "Forceful Exertion", "Static Work", "Dynamic Work"], "eng": [], "admin": [{"name": "Hearing Conservation", "desc": "Training/Audiograms"}, {"name": "Personal Protection", "desc": "Program/Signage/"}, {"name": "", "desc": "Training"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "Clear Safety Glasses"}, {"name": "Hearing", "desc": "Earplugs", "comment": "Sound Guard - Manufacturer NRR 29"}, {"name": "Clothing/Hand", "desc": "", "comment": ""}, {"name": "Respirator", "desc": "", "comment": ""}, {"name": "Additional PPE", "desc": "", "comment": ""}]}, "Flammable/Combustible Storage": {"chemical": ["Petroleum Distillates Kerosene Aviation Fuel"], "physical": [], "biological": [], "ergonomic": ["Dynamic Work", "Heavy Lifting"], "eng": [], "admin": [{"name": "HAZCOM", "desc": "SDS Binders/Training"}, {"name": "Personal Protection", "desc": "Program/Signage/"}, {"name": "", "desc": "Training"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "Clear Safety Glasses"}, {"name": "Hearing", "desc": "", "comment": ""}, {"name": "Clothing/Hand", "desc": "", "comment": ""}, {"name": "Respirator", "desc": "", "comment": ""}, {"name": "Additional PPE", "desc": "", "comment": ""}]}, "Warehousing/Storage": {"chemical": [], "physical": [], "biological": [], "ergonomic": ["Dynamic Work", "Heavy Lifting"], "eng": [], "admin": [], "ppe": [{"name": "Eye", "desc": "", "comment": ""}, {"name": "Hearing", "desc": "", "comment": ""}, {"name": "Clothing/Hand", "desc": "", "comment": ""}, {"name": "Respirator", "desc": "", "comment": ""}, {"name": "Additional PPE", "desc": "", "comment": ""}]}, "Administrative Operations": {"chemical": [], "physical": [], "biological": [], "ergonomic": ["Static Work", "Visual Demand"], "eng": [], "admin": [], "ppe": [{"name": "Eye", "desc": "", "comment": ""}, {"name": "Hearing", "desc": "", "comment": ""}, {"name": "Clothing/Hand", "desc": "", "comment": ""}, {"name": "Respirator", "desc": "", "comment": ""}, {"name": "Additional PPE", "desc": "", "comment": ""}]}, "Vehicle Maintenance": {"chemical": ["Petroleum Distillates - Loctite SI 593, Marvel Air Tool Oil, Kroil Penetrant, Goop Hand Cleaner & Stain Remover, WD-40, Axarel 3000, Klean Strip Paint Thinner, Kriol Penetrant", "Acetone - Carb & Choke Cleaner, Berkebile Gum Cutter", "Toluene - Carb & Choke Cleaner, Berkebile Gum Cutter", "Methanol - Carb & Choke Cleaner", "Xylene - Berkebile Gum Cutter, Klean Strip Paint Thinner", "Carbon Dioxide - Berkebile Gum Cutter, WD-40, Wurth Brake & Parts Cleaner", "Methanol - Berkebile Gum Cutter", "Benzene - Klean Strip Paint Thinner"], "physical": ["Noise", "Thermal Stress"], "biological": [], "ergonomic": ["Hand/Arm Vibration", "Forceful Exertion", "Static Work", "Dynamic Work"], "eng": ["Evaporative Cooler", "Fans", "Overhead Vehicle", "Exhaust", "Forklift", "Heaters"], "admin": [{"name": "HAZMAT/HAZWASTE", "desc": "Program"}, {"name": "HAZCOM", "desc": "SDS Binder"}, {"name": "Hearing Conservation", "desc": "Audiograms/Signage"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "US Safety Glasses"}, {"name": "Hearing", "desc": "Face Shield", "comment": "US Safety Face Shield"}, {"name": "Clothing/Hand", "desc": "Chemical Splash Goggles", "comment": "Readymax Goggles/Ear Plugs"}, {"name": "Respirator", "desc": "Single Hearing", "comment": "3M E.A.R Classic Plugs NRR: 29 dB"}, {"name": "Additional PPE", "desc": "Protection", "comment": "Readymax Goggles/Ear Plugs NRR: 27 dB"}, {"name": "", "desc": "Gloves", "comment": "Sound Guard Ear Plugs NRR: 29"}, {"name": "", "desc": "Apron", "comment": "Bilsom Thunder T2 Earmuffs NRR: 26 dB"}, {"name": "", "desc": "Nitrile Gloves", "comment": "Pro-Safe Earmuffs NRR: 23 dB"}, {"name": "", "desc": "Impact Gloves", "comment": "Butyl Rubber Gloves"}, {"name": "", "desc": "Hard Hat", "comment": "Butyl Rubber Apron"}, {"name": "", "desc": "Coveralls", "comment": "Skilcraft 4 Mil Nitrile Gloves"}, {"name": "", "desc": "", "comment": "Mechanix Impact Gloves"}, {"name": "", "desc": "", "comment": "MSA"}, {"name": "", "desc": "", "comment": "Dickies"}]}, "Battery Charging/Storage": {"chemical": ["Hydrogen"], "physical": ["Thermal Stress"], "biological": [], "ergonomic": ["Forceful Exertion"], "eng": [], "admin": [{"name": "HAZMAT/HAZWASTE", "desc": "Program"}, {"name": "HAZCOM", "desc": "SDS Binder"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "US Safety Glasses"}, {"name": "Hearing", "desc": "Face Shield", "comment": "US Safety Face Shield"}, {"name": "Clothing/Hand", "desc": "Chemical Splash Goggles", "comment": "Readymax Goggles/Ear Plugs"}, {"name": "Respirator", "desc": "Gloves", "comment": "Butyl Rubber Gloves"}, {"name": "Additional PPE", "desc": "Apron", "comment": "Mechanics Gloves"}]}, "Brake System Repair": {"chemical": ["Acetone - Carb & Choke Cleaner", "Carbon Dioxide - Wurth Brake & Parts Cleaner"], "physical": ["Noise", "Thermal Stress"], "biological": [], "ergonomic": ["Hand/Arm Vibration", "Forceful Exertion", "Static Work", "Dynamic Work"], "eng": ["Evaporative Cooler", "Fans", "Overhead Vehicle", "Exhaust", "Heaters"], "admin": [{"name": "HAZMAT/HAZWASTE", "desc": "Program"}, {"name": "HAZCOM", "desc": "SDS Binder"}, {"name": "Hearing Conservation", "desc": "Audiograms/Signage"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "US Safety Glasses"}, {"name": "Hearing", "desc": "Face Shield", "comment": "US Safety Face Shield"}, {"name": "Clothing/Hand", "desc": "Chemical Splash Goggles", "comment": "Readymax Goggles/Ear Plugs"}, {"name": "Respirator", "desc": "Single Hearing", "comment": "3M E.A.R Classic Plugs NRR: 29 dB"}, {"name": "Additional PPE", "desc": "Protection", "comment": "Readymax Goggles/Ear Plugs NRR: 27 dB"}, {"name": "", "desc": "Gloves", "comment": "Sound Guard Ear Plugs NRR: 29"}, {"name": "", "desc": "Nitrile Gloves", "comment": "Bilsom Thunder T2 Earmuffs NRR: 26 dB"}, {"name": "", "desc": "Impact Gloves", "comment": "Pro-Safe Earmuffs NRR: 23 dB"}, {"name": "", "desc": "", "comment": "Butyl Rubber Gloves"}, {"name": "", "desc": "", "comment": "Skilcraft 4 Mil Nitrile Gloves"}, {"name": "", "desc": "", "comment": "Mechanix Impact Gloves"}]}, "Parts Washing": {"chemical": ["Petroleum Distillates - Safety-Kleen"], "physical": ["Thermal Stress"], "biological": [], "ergonomic": ["Static Work", "Dynamic Work"], "eng": ["Fans", "Heaters"], "admin": [{"name": "HAZMAT/HAZWASTE", "desc": "Program"}, {"name": "HAZCOM", "desc": "SDS Binder"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "US Safety Glasses"}, {"name": "Hearing", "desc": "Face Shield", "comment": "US Safety Face Shield"}, {"name": "Clothing/Hand", "desc": "Chemical Splash", "comment": "Readymax Goggles/Ear Plugs"}, {"name": "Respirator", "desc": "Goggles", "comment": "Butyl Rubber Gloves"}, {"name": "Additional PPE", "desc": "Gloves", "comment": "Skilcraft 4 Mil Nitrile Gloves"}, {"name": "", "desc": "Nitrile Gloves", "comment": "Mechanix Impact Gloves"}, {"name": "", "desc": "Impact Gloves", "comment": ""}]}, "Welding, Grinding, Cutting": {"chemical": ["Hexavalent Chromium Cadmium Lead Iron Manganese"], "physical": ["Noise", "Thermal Stress"], "biological": [], "ergonomic": ["Hand/Arm Vibration", "Forceful Exertion", "Static Work", "Dynamic Work"], "eng": ["Evaporative Cooler", "Fans", "Gas Space Heaters", "Stationary Fans", "Welding Curtains"], "admin": [{"name": "HAZMAT/HAZWASTE", "desc": "Program"}, {"name": "HAZCOM", "desc": "SDS Binder"}, {"name": "Hearing Conservation", "desc": "Audiograms/Signage"}], "ppe": [{"name": "Eye", "desc": "Welding Protection", "comment": "Cronation Eclipse 2000 Welding Helmet"}, {"name": "Hearing", "desc": "Single Hearing", "comment": "Welding Goggles"}, {"name": "Clothing/Hand", "desc": "Protection", "comment": "3M E.A.R Classic Plugs NRR: 29 dB"}, {"name": "Respirator", "desc": "Welding Gloves", "comment": "Readymax Goggles/Ear Plugs NRR: 27 dB"}, {"name": "Additional PPE", "desc": "", "comment": "Sound Guard Ear Plugs NRR: 29"}, {"name": "", "desc": "", "comment": "Bilsom Thunder T2 Earmuffs NRR: 26 dB"}, {"name": "", "desc": "", "comment": "Pro-Safe Earmuffs NRR: 23 dB"}, {"name": "", "desc": "", "comment": "Leather Welding Gloves"}]}, "Machining": {"chemical": ["Petroleum Distillates Lubricating Cutting Oil"], "physical": ["Noise", "Thermal Stress"], "biological": [], "ergonomic": ["Static Work", "Dynamic Work", "Vibrating Tools", "Forceful Exertion"], "eng": ["Fans", "Heaters"], "admin": [{"name": "HAZMAT/HAZWASTE", "desc": "Program"}, {"name": "HAZCOM", "desc": "SDS Binder"}, {"name": "Hearing Conservation", "desc": "Audiograms/Signage"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "US Safety Glasses"}, {"name": "Hearing", "desc": "Face Shield", "comment": "US Safety Face Shield"}, {"name": "Clothing/Hand", "desc": "Single Hearing", "comment": "3M E.A.R Classic Plugs NRR: 29 dB"}, {"name": "Respirator", "desc": "Protection", "comment": "Readymax Goggles/Ear Plugs NRR: 27 dB"}, {"name": "Additional PPE", "desc": "", "comment": "Sound Guard Ear Plugs NRR: 29"}, {"name": "", "desc": "", "comment": "Bilsom Thunder T2 Earmuffs NRR: 26 dB"}, {"name": "", "desc": "", "comment": "Pro-Safe Earmuffs NRR: 23 dB"}]}, "Sanding/Grinding": {"chemical": ["Epoxy Filler 3M Scotch Weld Adhesives Skilcraft Spray Adhesive Sealants Permatex Gasket Sealant Permatex High Tack Sealant"], "physical": ["Noise"], "biological": [], "ergonomic": ["Hand/Arm Vibration", "Forceful Exertion", "Static Work", "Dynamic Work"], "eng": ["Evaporative Cooler", "Fans", "Gas Space Heaters", "Stationary Fans"], "admin": [{"name": "HAZMAT/HAZWASTE", "desc": "Program"}, {"name": "HAZCOM", "desc": "SDS Binder"}, {"name": "Hearing Conservation", "desc": "Audiograms/Signage"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "US Safety Glasses"}, {"name": "Hearing", "desc": "Face Shield", "comment": "US Safety Face Shield"}, {"name": "Clothing/Hand", "desc": "Single Hearing", "comment": "3M E.A.R Classic Plugs NRR: 29 dB"}, {"name": "Respirator", "desc": "Protection", "comment": "Readymax Goggles/Ear Plugs NRR: 27 dB"}, {"name": "Additional PPE", "desc": "Gloves", "comment": "Sound Guard Ear Plugs NRR: 29"}, {"name": "", "desc": "Nitrile Gloves", "comment": "Bilsom Thunder T2 Earmuffs NRR: 26 dB"}, {"name": "", "desc": "", "comment": "Pro-Safe Earmuffs NRR: 23 dB"}, {"name": "", "desc": "", "comment": "Butyl Rubber Gloves"}, {"name": "", "desc": "", "comment": "Skilcraft 4 Mil Nitrile Gloves"}]}, "Woodworking": {"chemical": ["Xylene - Wood Finish Ebony 2718, Testors Enamel Paint Bottle Sets, Klean Strip Paint Thinner, Deft Clear Wood Finish", "Benzene - Klean Strip Paint Thinner Petroleum Distillates - Testors Enamel Paint Bottle Sets, Feed-N-Wax Orange Oil, Klean Strip Paint Thinner", "Silica - Loctite Power Grab Adhesive, Irwin Marking Chalk, Wood Putty", "Acetone - Eco Sure Enamel Paint Clear, Eco-Sure Flat Black, Klean Strip Paint Thinner Wood Dust"], "physical": ["Noise"], "biological": [], "ergonomic": ["Dynamic Work", "Heavy Lifting", "Repetitive Motion"], "eng": ["Fans", "Heaters", "Exhaust Ventiliation"], "admin": [{"name": "HAZMAT/HAZWASTE", "desc": "Program"}, {"name": "HAZCOM", "desc": "SDS Binder"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "US Safety Glasses"}, {"name": "Hearing", "desc": "Face Shield", "comment": "US Safety Face Shield"}, {"name": "Clothing/Hand", "desc": "Single Hearing", "comment": "3M E.A.R Classic Plugs NRR: 29 dB"}, {"name": "Respirator", "desc": "Impact Gloves", "comment": "Readymax Goggles/Ear Plugs NRR: 27 dB"}, {"name": "Additional PPE", "desc": "", "comment": "Sound Guard Ear Plugs NRR: 29"}, {"name": "", "desc": "", "comment": "Bilsom Thunder T2 Earmuffs NRR: 26 dB"}, {"name": "", "desc": "", "comment": "Pro-Safe Earmuffs NRR: 23 dB"}, {"name": "", "desc": "", "comment": "Mechanix Impact Gloves"}]}, "Weapons Maintenance/Repair": {"chemical": ["Lead"], "physical": [], "biological": [], "ergonomic": ["Static Work", "Dynamic Work", "Hand/Arm Vibration", "Forceful Exertion"], "eng": ["Adjustable Chairs"], "admin": [], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "US Safety Glasses"}, {"name": "Hearing", "desc": "Gloves", "comment": "Mechanix Impact Gloves"}, {"name": "Clothing/Hand", "desc": "", "comment": ""}, {"name": "Respirator", "desc": "", "comment": ""}, {"name": "Additional PPE", "desc": "", "comment": ""}]}, "Calibration": {"chemical": ["Ionizing Radiation - Calibration Sources"], "physical": [], "biological": [], "ergonomic": ["Static Work", "Visual Demand", "Forceful Exertion"], "eng": ["Evaporative Cooler", "Fans", "Heaters"], "admin": [{"name": "Radiation Safety", "desc": "Program"}, {"name": "Radiation Dosimetry", "desc": "Program"}], "ppe": [{"name": "Eye", "desc": "", "comment": ""}, {"name": "Hearing", "desc": "", "comment": ""}, {"name": "Clothing/Hand", "desc": "", "comment": ""}, {"name": "Respirator", "desc": "", "comment": ""}, {"name": "Additional PPE", "desc": "", "comment": ""}]}, "Welding/Grinding/Cutting": {"chemical": ["Hexavalent Chromium Cadmium Lead Iron Manganese"], "physical": ["Noise", "Thermal Stress"], "biological": [], "ergonomic": ["Hand/Arm Vibration", "Forceful Exertion", "Static Work", "Dynamic Work"], "eng": ["Evaporative Cooler", "Fans", "Gas Space Heaters", "Stationary Fans", "Welding Curtains"], "admin": [{"name": "HAZMAT/HAZWASTE", "desc": "Program"}, {"name": "HAZCOM", "desc": "SDS Binder"}, {"name": "Hearing Conservation", "desc": "Audiograms/Signage"}], "ppe": [{"name": "Eye", "desc": "Welding Protection", "comment": "Cronation Eclipse 2000 Welding Helmet"}, {"name": "Hearing", "desc": "Single Hearing", "comment": "Welding Goggles"}, {"name": "Clothing/Hand", "desc": "Protection", "comment": "3M E.A.R Classic Plugs NRR: 29 dB"}, {"name": "Respirator", "desc": "Welding Gloves", "comment": "Readymax Goggles/Ear Plugs NRR: 27 dB"}, {"name": "Additional PPE", "desc": "", "comment": "Sound Guard Ear Plugs NRR: 29"}, {"name": "", "desc": "", "comment": "Bilsom Thunder T2 Earmuffs NRR: 26 dB"}, {"name": "", "desc": "", "comment": "Pro-Safe Earmuffs NRR: 23 dB"}, {"name": "", "desc": "", "comment": "Leather Welding Gloves"}]}, "Battery Charging": {"chemical": ["Hydrogen"], "physical": ["Thermal Stress"], "biological": [], "ergonomic": ["Forceful Exertion"], "eng": [], "admin": [{"name": "HAZMAT/HAZWASTE", "desc": "Program"}, {"name": "HAZCOM", "desc": "SDS Binder"}], "ppe": [{"name": "Eye", "desc": "Safety Glasses", "comment": "US Safety Glasses"}, {"name": "Hearing", "desc": "Face Shield", "comment": "US Safety Face Shield"}, {"name": "Clothing/Hand", "desc": "Chemical Splash Goggles", "comment": "Readymax Goggles/Ear Plugs"}, {"name": "Respirator", "desc": "Gloves", "comment": "Butyl Rubber Gloves"}, {"name": "Additional PPE", "desc": "Apron", "comment": "Mechanics Gloves"}]}}, "allProcesses": ["Aircraft Maintenance", "ALSE Repair", "Flammable/Combustible Storage", "Aircraft Refueling", "Grinding/Cutting", "Blade Repair", "Painting/Stenciling", "Electronics Repair/Soldering", "Engine Test", "Administrative Operations", "Warehousing/Storage", "Vehicle Maintenance", "Battery Charging/Storage", "Brake System Repair", "Parts Washing", "Welding/Grinding/Cutting", "Machining", "Sanding/Grinding", "Woodworking", "Weapons Maintenance/Repair", "Calibration", "Battery Charging", "Abrasive Blasting Booth", "Welding", "Paint Booth Operations", "Weapons Maintenance", "Sanding/Grinding/Cutting", "Welding, Grinding, Cutting"], "taxonomies": {"physical": ["Noise", "Thermal Stress", "Heat Stress", "Cold Stress", "Hand-Arm Vibration", "Whole-Body Vibration", "Non-Ionizing Radiation (Welding/UV)", "Ionizing Radiation", "Laser", "Inadequate Lighting", "Electrical", "Compressed Gases", "Slips/Trips/Falls"], "biological": ["Bloodborne Pathogens", "Mold/Fungi", "Bacteria", "Insect/Animal Contact"], "ergonomic": ["Forceful Exertion", "Static Work", "Dynamic Work", "Heavy Lifting", "Hand/Arm Vibration", "Visual Demand", "Vibrating Tools", "Repetitive Motion", "Awkward Posture", "Contact Stress", "Sustained Posture", "Overhead Work"], "engControls": ["SODRTEK FX 50", "Ventilation", "Evaporative Cooler", "Fans", "Overhead Vehicle", "Exhaust", "Forklift", "Heaters", "Gas Space Heaters", "Stationary Fans", "Welding Curtains", "Exhaust Ventiliation", "Adjustable Chairs", "Local Exhaust Ventilation", "General/Dilution Ventilation", "Downdraft Table", "Spray/Paint Booth", "Enclosure/Isolation", "Machine Guarding", "Sound Enclosure", "Wet Methods"], "adminPrograms": ["HAZCOM", "Hearing Conservation", "Respiratory Protection", "Personal Protective Equipment", "Confined Space", "Lockout/Tagout", "Bloodborne Pathogens", "Lead Compliance", "Hexavalent Chromium", "Heat Illness Prevention", "Machine Guarding", "Fall Protection", "Fire Prevention", "Emergency Action Plan", "Indoor Air Quality"], "ppeTypes": ["Eye", "Face", "Hearing", "Respirator", "Hand", "Clothing/Hand", "Foot", "Head", "Body/Apron", "Fall Protection", "Additional PPE"], "chemicalAgents": ["Toluene - PPG PR1440 A 1/2 Part B / Flamemaster Fuel Tank Sealant / PPG PS 870 A Part B / Corrosion Prevention Compound Triethylene Glycol", "Dimethacrylate - SAF-T-LOK Grade A/B/C", "Formaldehyde - PPG PR 1005L", "Methyl Ethyl Ketone - 3M Scotch-Weld EC-3917", "Epichlorohydrin - Loctite EA 9359.3", "Titanium Dioxide - PPG PS 870 A Part B", "Acetone - 3M Scotch-Weld Adhesive EC-1357", "Dichloromethane - Hylomar Aerograde PL32", "Isocyanates - Henkel Loctite 640/MIL-DTL-64159B/ AER S2FIX Trimethylcyclohexylmeth-", "acrylate - Henkel Loctite 270 Ethyle 2 Cyanoacrylate - Henkel Loctite 401 Isopropyl Alcohol", "Xylene - Pacific West Degreaser", "Ethylene Glycol - MIL-PRF- 85704 Type 2", "Tetrafluoroethane - MIL- PRF-81309H Methylene Chloride - Stripper 11", "Hexavalent Chromium Cadmium Lead Iron Lead Manganese", "Acetone - Corrosion Prevention Compound / 1K Polyurethane", "Toluene - Corrosion Prevention Compound Tetrafluoroethane - Corrosion Prevention Compound", "Xylene - 1K Polyurethane", "Isocyanates - Milspray Catalyst B", "Lead", "Diesel Particulate Matter Hydrocarbons Carbon Monxide", "Petroleum Distillates Kerosene Aviation Fuel", "Petroleum Distillates - Loctite SI 593, Marvel Air Tool Oil, Kroil Penetrant, Goop Hand Cleaner & Stain Remover, WD-40, Axarel 3000, Klean Strip Paint Thinner, Kriol Penetrant", "Acetone - Carb & Choke Cleaner, Berkebile Gum Cutter", "Toluene - Carb & Choke Cleaner, Berkebile Gum Cutter", "Methanol - Carb & Choke Cleaner", "Xylene - Berkebile Gum Cutter, Klean Strip Paint Thinner", "Carbon Dioxide - Berkebile Gum Cutter, WD-40, Wurth Brake & Parts Cleaner", "Methanol - Berkebile Gum Cutter", "Benzene - Klean Strip Paint Thinner", "Hydrogen", "Acetone - Carb & Choke Cleaner", "Carbon Dioxide - Wurth Brake & Parts Cleaner", "Petroleum Distillates - Safety-Kleen", "Hexavalent Chromium Cadmium Lead Iron Manganese", "Petroleum Distillates Lubricating Cutting Oil", "Epoxy Filler 3M Scotch Weld Adhesives Skilcraft Spray Adhesive Sealants Permatex Gasket Sealant Permatex High Tack Sealant", "Xylene - Wood Finish Ebony 2718, Testors Enamel Paint Bottle Sets, Klean Strip Paint Thinner, Deft Clear Wood Finish", "Benzene - Klean Strip Paint Thinner Petroleum Distillates - Testors Enamel Paint Bottle Sets, Feed-N-Wax Orange Oil, Klean Strip Paint Thinner", "Silica - Loctite Power Grab Adhesive, Irwin Marking Chalk, Wood Putty", "Acetone - Eco Sure Enamel Paint Clear, Eco-Sure Flat Black, Klean Strip Paint Thinner Wood Dust", "Ionizing Radiation - Calibration Sources"], "adminDescSuggestions": ["SDS Binders/Training", "Training/Audiograms", "Program/Signage/", "Training", "Program/Training", "Program/Fit Testing/", "SDS Binders /Training", "Program", "SDS Binder", "Audiograms/Signage"], "ppeDescSuggestions": ["Safety Glasses", "Earplugs", "Nitrile Gloves", "Full Face", "Half Face", "Face Shield", "Chemical Splash Goggles", "Single Hearing", "Protection", "Gloves", "Apron", "Impact Gloves", "Hard Hat", "Coveralls", "Chemical Splash", "Goggles", "Welding Protection", "Welding Gloves"], "ppeCommentSuggestions": ["Clear Safety Glasses", "Sound Guard - Manufacturer NRR 29", "ULINE General Purpose Nitrile Gloves", "3M Full Face 7800S", "3M Half Face 7503", "US Safety Glasses", "US Safety Face Shield", "Readymax Goggles/Ear Plugs", "3M E.A.R Classic Plugs NRR: 29 dB", "Readymax Goggles/Ear Plugs NRR: 27 dB", "Sound Guard Ear Plugs NRR: 29", "Bilsom Thunder T2 Earmuffs NRR: 26 dB", "Pro-Safe Earmuffs NRR: 23 dB", "Butyl Rubber Gloves", "Butyl Rubber Apron", "Skilcraft 4 Mil Nitrile Gloves", "Mechanix Impact Gloves", "MSA", "Dickies", "Mechanics Gloves", "Cronation Eclipse 2000 Welding Helmet", "Welding Goggles", "Leather Welding Gloves"]}, "programReview": {"programs": [{"program": "OSHA Expanded Standard", "standard": "29 CFR 1910.1001 \u2013 Asbestos", "defApplicable": "No", "defRac": "4", "noteTemplate": "", "deficiencyTemplate": "", "recommendationTemplate": ""}, {"program": "OSHA Expanded Standard", "standard": "29 CFR 1910.1025 \u2013 Lead", "defApplicable": "Yes", "defRac": "4", "noteTemplate": "Lead may be found in some of the materials during soldering operations.", "deficiencyTemplate": "Lead Safety Program was not documented and available for personnel to review. Lead Safety Program training records were not available for on-site personnel.", "recommendationTemplate": "A lead program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on the lead program with refresher training occurring annually or anytime processes change."}, {"program": "OSHA Expanded Standard", "standard": "29 CFR 1910.1026 \u2013 Hexavalent Chromium", "defApplicable": "Yes", "defRac": "4", "noteTemplate": "Hexavalent Chromium may be found in some of the materials during sanding/grinding.", "deficiencyTemplate": "Hexavalent Chromium Safety Program was not documented and available for personnel to review. Hexavalent Chromium Safety Program training records were not available for on-site personnel.", "recommendationTemplate": "A Hexavalent Chromium program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on Hexavalent Chromium with refresher training occurring annually or anytime processes change."}, {"program": "OSHA Expanded Standard", "standard": "29 CFR 1910.1027 \u2013 Cadmium", "defApplicable": "Yes", "defRac": "4", "noteTemplate": "Cadmium may be found in some of the materials during sanding/grinding.", "deficiencyTemplate": "Cadmium Safety Program was not documented and available for personnel to review. Cadmium Safety Program training records were not available for on-site personnel.", "recommendationTemplate": "A Cadmium program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on Cadmium with refresher training occurring annually or anytime processes change."}, {"program": "OSHA Expanded Standard", "standard": "29 CFR 1910.1028 \u2013 Benzene", "defApplicable": "Yes", "defRac": "4", "noteTemplate": "Benzene may be found in JP-8 Fuel during aircraft refueling operations", "deficiencyTemplate": "Benzene Safety Program was not documented and available for personnel to review. Benzene Safety Program training records were not available for on-site personnel.", "recommendationTemplate": "A Benzene program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on the Benzene program with refresher training occurring annually or anytime processes change."}, {"program": "OSHA Expanded Standard", "standard": "29 CFR 1910.1052 \u2013 Methylene Chloride", "defApplicable": "Yes", "defRac": "4", "noteTemplate": "Methylene Chloride may be found in JP-8 Fuel during aircraft refueling operations", "deficiencyTemplate": "Methylene Chloride Safety Program was not documented and available for personnel to review. Methylene Chloride Safety Program training records were not available for on-site personnel.", "recommendationTemplate": "A Methylene Chloride program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on the Methylene Chloride program with refresher training occurring annually or anytime processes change."}, {"program": "Hazard Communication", "standard": "29 CFR 1920.1200 \u2013 Hazard Communication", "defApplicable": "Yes", "defRac": "4", "noteTemplate": "Based on the presence and use of hazardous chemicals at AASF 1, Hazard Communication is necessary.", "deficiencyTemplate": "A HAZCOM Program was not documented or available for personnel to review. No training records were available for personnel to verify HAZCOM program annual training.", "recommendationTemplate": "A hazard communication program must be documented and available for personnel to review. All new and existing personnel must be trained on the HAZCOM program with refresher training occurring annually or anytime processes change"}, {"program": "Noise", "standard": "29 CFR 1910.95 \u2013 Occupational Noise Exposure DA PAM 40-501 \u2013 Army Hearing Program", "defApplicable": "Yes", "defRac": "4", "noteTemplate": "Due to the nature of the industrial work throughout the maintenance facility, AASF 1 is classified as a hazardous noise area and noise dosimetry indicates levels above the OSHA Action Limit and PEL.", "deficiencyTemplate": "Hearing Conservation Program was not documented and available for personnel to review. Hearing Conservation Program training records were not available for on-site personnel.", "recommendationTemplate": "A hearing conservation program must be documented, and available for personnel to review. All new and existing personnel must be training on the hearing conservation program with refresher training occurring annually."}, {"program": "Other Applicable Programs", "standard": "Personal Protective Equipment", "defApplicable": "Yes", "defRac": "3", "noteTemplate": "Due to the nature of the industrial work performed at AASF 1, personnel are required to wear different types of personal protective equipment.", "deficiencyTemplate": "Personal Protective Equipment Program was not documented and available for personnel to review. Personal Protective Equipment Program training records were not available for personnel.", "recommendationTemplate": "A personal protective equipment program should be documented, implemented, and available for personnel to review. All new and existing personnel should be trained on personal protective equipment with refresher training occurring annually or anytime processes change."}, {"program": "Respiratory Protection", "standard": "20 CFR 1910.134 \u2013 Respiratory Protection", "defApplicable": "Yes", "defRac": "3", "noteTemplate": "Based on the presence of 3M 6200 half face respirators that may be used during fuselage maintenance, a Respiratory Protection Program is required.", "deficiencyTemplate": "Respiratory Protection Program was not documented and available for personnel to review. Respiratory Protection Program training records were not available for personnel.", "recommendationTemplate": "A Respiratory Protection Program should be documented, implemented, and available for personnel to review. All new and existing personnel should be trained on Respiratory Protection Program with refresher training occurring annually or anytime processes change."}, {"program": "Electromagnetic Frequency (EMF)", "standard": "29 CFR 1910.97 \u2013 Nonionizing Radiation", "defApplicable": "No", "defRac": "4", "noteTemplate": "Non-ionizing Radiation may be generated during welding activities.", "deficiencyTemplate": "A Non-Ionizing Radiation Safety Program was not documented or available for personnel to review. Non-Ionizing Radiation Safety Program training records were not available for on-site personnel.", "recommendationTemplate": "A Non-Ionizing Radiation Safety Program should be documented, implemented, and available for personnel to review. All new and existing personnel should be trained on Non-Ionizing Radiation Safety Program with refresher training occurring annually or anytime processes change."}, {"program": "Compressed Breathing Air (Supplied Air Respirators)", "standard": "29 CFR 1910.134(i)(1)(ii) \u2013 Grade D Air Testing", "defApplicable": "No", "defRac": "4", "noteTemplate": "", "deficiencyTemplate": "", "recommendationTemplate": ""}, {"program": "Lasers", "standard": "29 CFR 1910.97 \u2013 Nonionizing Radiation DA PAM 40-506 \u2013 Army Vision Conservation Program", "defApplicable": "No", "defRac": "4", "noteTemplate": "", "deficiencyTemplate": "", "recommendationTemplate": ""}, {"program": "Ionizing Radiation", "standard": "29 CFR 1910.1096 \u2013 Ionizing Radiation", "defApplicable": "No", "defRac": "4", "noteTemplate": "", "deficiencyTemplate": "", "recommendationTemplate": ""}, {"program": "Permit-Required Confined Space", "standard": "29 CFR 1910.146 \u2013 Permit-Required Confined Spaces", "defApplicable": "Yes", "defRac": "4", "noteTemplate": "Personnel on rare occasions may enter confined spaces in the fuselage of the Blackhawk Helicopter.", "deficiencyTemplate": "Confined Space Program was not documented and available for personnel to review. Confined Space Program training records were not available for personnel.", "recommendationTemplate": "A Confined Space Program should be documented, implemented, and available for personnel to review. All new and existing personnel should be trained on Confined Space Program with refresher training occurring annually or anytime processes change."}, {"program": "Bloodborne Pathogens", "standard": "29 CFR 1910.1030 \u2013 Bloodborne Pathogens", "defApplicable": "No", "defRac": "4", "noteTemplate": "", "deficiencyTemplate": "", "recommendationTemplate": ""}, {"program": "Other Applicable Programs", "standard": "Hazardous Waste Storage and Handling", "defApplicable": "Yes", "defRac": "4", "noteTemplate": "Hazardous Materials, Storage, and Waste (HAZMAT) Program was not documented and available for personnel to review.", "deficiencyTemplate": "HAZMAT handling and storage program was not documented or available for personnel to review. No training records were available for personnel to verify HAZMAT handling and storage program annual training.", "recommendationTemplate": "A HAZMAT handling and storage program must be documented and available for personnel to review. All new and existing personnel must be trained on the program with refresher training occurring annually or anytime processes change"}, {"program": "Other Applicable Programs", "standard": "Ventilation", "defApplicable": "Yes", "defRac": "3", "noteTemplate": "Multiple systems were inoperable and not available to be surveyed.", "deficiencyTemplate": "ALSE soldering exhaust hood did not meet the minimum design criteria.", "recommendationTemplate": "Submit a work order to fix the system, then perform ventilation survey"}, {"program": "Other Applicable Programs", "standard": "Ergonomic", "defApplicable": "Yes", "defRac": "4", "noteTemplate": "No documentation available", "deficiencyTemplate": "Ergonomic Awareness Program was not documented and available for personnel to review. Ergonomic Awareness program training records were not available for on-site personnel.", "recommendationTemplate": "An ergonomic awareness program should be documented, implemented, and available for personnel to review. All new and existing personnel should be trained on ergonomic awareness with refresher training occurring annually or anytime processes change."}], "racOptions": ["N/A", "1", "2", "3", "4", "5"], "applicableOptions": ["Yes", "No"], "suggestions": {"notes": ["Lead may be found in some of the materials during soldering operations.", "Lead may be found in some of the materials during welding and sanding/grinding.", "Hexavalent Chromium may be found in some of the materials during sanding/grinding.", "Hexavalent Chromium may be found in some of the materials during welding and sanding/grinding.", "Cadmium may be found in some of the materials during sanding/grinding.", "Cadmium may be found in some of the materials during welding and sanding/grinding.", "Benzene may be found in JP-8 Fuel during aircraft refueling operations", "Methylene Chloride may be found in JP-8 Fuel during aircraft refueling operations", "Based on the presence and use of hazardous chemicals at AASF 1, Hazard Communication is necessary.", "Based on the presence and use of hazardous chemicals at FMS #23, Hazard Communication is necessary.", "Due to the nature of the industrial work throughout the maintenance facility, AASF 1 is classified as a hazardous noise area and noise dosimetry indicates levels above the OSHA Action Limit and PEL.", "Due to the nature of the industrial work in the maintenance shop FMS #23 is classified as a hazardous noise area and noise dosimetry indicates levels above the OSHA Action Limit and PEL.", "Due to the nature of the industrial work performed at AASF 1, personnel are required to wear different types of personal protective equipment.", "Due to the nature of the industrial work performed at FMS #23, personnel are required to wear different types of personal protective equipment.", "Based on the presence of 3M 6200 half face respirators that may be used during fuselage maintenance, a Respiratory Protection Program is required.", "Based on the presence of N95 respirators that may be used during painting/stenciling a Respiratory Protection Program is required.", "Non-ionizing Radiation may be generated during welding activities.", "Personnel on rare occasions may enter confined spaces in the fuselage of the Blackhawk Helicopter.", "Hazardous Materials, Storage, and Waste (HAZMAT) Program was not documented and available for personnel to review.", "Hazardous Materials, Storage, and Waste (HAZMAT) Program was documented and available for personnel to review and the FMS #23 follows the programs of the CSMS.", "Multiple systems were inoperable and not available to be surveyed.", "One Overhead Exhaust System did not meet the minimum design criteria.", "No documentation available", "Ergonomic Awareness Program was not documented and available for personnel to review. Ergonomic Awareness program training records were not available for on-site personnel"], "deficiencies": ["Lead Safety Program was not documented and available for personnel to review. Lead Safety Program training records were not available for on-site personnel.", "Hexavalent Chromium Safety Program was not documented and available for personnel to review. Hexavalent Chromium Safety Program training records were not available for on-site personnel.", "Cadmium Safety Program was not documented and available for personnel to review. Cadmium Safety Program training records were not available for on-site personnel.", "Benzene Safety Program was not documented and available for personnel to review. Benzene Safety Program training records were not available for on-site personnel.", "Methylene Chloride Safety Program was not documented and available for personnel to review. Methylene Chloride Safety Program training records were not available for on-site personnel.", "A HAZCOM Program was not documented or available for personnel to review. No training records were available for personnel to verify HAZCOM program annual training.", "Hearing Conservation Program was not documented and available for personnel to review. Hearing Conservation Program training records were not available for on-site personnel.", "Personal Protective Equipment Program was not documented and available for personnel to review. Personal Protective Equipment Program training records were not available for personnel.", "Respiratory Protection Program was not documented and available for personnel to review. Respiratory Protection Program training records were not available for personnel.", "A Non-Ionizing Radiation Safety Program was not documented or available for personnel to review. Non-Ionizing Radiation Safety Program training records were not available for on-site personnel.", "Confined Space Program was not documented and available for personnel to review. Confined Space Program training records were not available for personnel.", "HAZMAT handling and storage program was not documented or available for personnel to review. No training records were available for personnel to verify HAZMAT handling and storage program annual training.", "ALSE soldering exhaust hood did not meet the minimum design criteria.", "One (1) out of the 6 ventilation exhaust components did not meet the minimum design criteria.", "Ergonomic Awareness Program was not documented and available for personnel to review. Ergonomic Awareness program training records were not available for on-site personnel."], "recommendations": ["A lead program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on the lead program with refresher training occurring annually or anytime processes change.", "A Hexavalent Chromium program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on Hexavalent Chromium with refresher training occurring annually or anytime processes change.", "A hexavalent chromium program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on the Hexavalent Chromium program with refresher training occurring annually or anytime processes change.", "A Cadmium program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on Cadmium with refresher training occurring annually or anytime processes change.", "A cadmium program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on the cadmium program with refresher training occurring annually or anytime processes change.", "A Benzene program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on the Benzene program with refresher training occurring annually or anytime processes change.", "A Methylene Chloride program must be developed, documented, implemented, and available for personnel to review. All new and existing personnel must be trained on the Methylene Chloride program with refresher training occurring annually or anytime processes change.", "A hazard communication program must be documented and available for personnel to review. All new and existing personnel must be trained on the HAZCOM program with refresher training occurring annually or anytime processes change", "A hazard communication program must be documented and available for personnel to review. All new and existing personnel must be trained on hazard communication with refresher training occurring annually or anytime processes change. The SDS binder should be frequently updated to reflect the current chemical inventory on hand.", "A hearing conservation program must be documented, and available for personnel to review. All new and existing personnel must be training on the hearing conservation program with refresher training occurring annually.", "A personal protective equipment program should be documented, implemented, and available for personnel to review. All new and existing personnel should be trained on personal protective equipment with refresher training occurring annually or anytime processes change.", "A Respiratory Protection Program should be documented, implemented, and available for personnel to review. All new and existing personnel should be trained on Respiratory Protection Program with refresher training occurring annually or anytime processes change.", "A Non-Ionizing Radiation Safety Program should be documented, implemented, and available for personnel to review. All new and existing personnel should be trained on Non-Ionizing Radiation Safety Program with refresher training occurring annually or anytime processes change.", "A Confined Space Program should be documented, implemented, and available for personnel to review. All new and existing personnel should be trained on Confined Space Program with refresher training occurring annually or anytime processes change.", "A HAZMAT handling and storage program must be documented and available for personnel to review. All new and existing personnel must be trained on the program with refresher training occurring annually or anytime processes change", "Submit a work order to fix the system, then perform ventilation survey", "Submit a work order to fix or maintenance, then perform ventilation survey", "An ergonomic awareness program should be documented, implemented, and available for personnel to review. All new and existing personnel should be trained on ergonomic awareness with refresher training occurring annually or anytime processes change."]}}};
+let activeTab='haz';
+
+let state = blankState();
+function blankState(){
+  return {meta:{siteType:"",site:"",addr:"",rpuid:"",bldg:"",date:"",surveyor:""}, processes:[], programs:[]};
+}
+function uid(){return 'p'+Math.random().toString(36).slice(2,9);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function norm(p){return String(p).replace(/\s*\/\s*/g,'/').replace(/\s*,\s*/g,', ').replace(/\s+/g,' ').trim();}
+
+function fillDatalist(id,arr){ document.getElementById(id).innerHTML=(arr||[]).map(v=>`<option value="${esc(v)}">`).join(''); }
+function initDatalists(){
+  const t=LIBRARY.taxonomies;
+  fillDatalist('dl_proc',LIBRARY.allProcesses);
+  fillDatalist('dl_chem',t.chemicalAgents);
+  fillDatalist('dl_phys',t.physical);
+  fillDatalist('dl_bio',t.biological);
+  fillDatalist('dl_ergo',t.ergonomic);
+  fillDatalist('dl_eng',t.engControls);
+  fillDatalist('dl_admin',t.adminPrograms);
+  fillDatalist('dl_admindesc',t.adminDescSuggestions);
+  fillDatalist('dl_ppe',t.ppeTypes);
+  fillDatalist('dl_ppedesc',t.ppeDescSuggestions);
+  fillDatalist('dl_ppecomment',t.ppeCommentSuggestions);
+  const s=LIBRARY.programReview.suggestions;
+  fillDatalist('dl_pnotes',s.notes);
+  fillDatalist('dl_pdef',s.deficiencies);
+  fillDatalist('dl_prec',s.recommendations);
+}
+function initSiteTypes(){
+  const sel=document.getElementById('siteType');
+  sel.innerHTML='<option value="">— select —</option>'+
+    Object.entries(LIBRARY.siteTypes).map(([k,v])=>`<option value="${k}">${k} — ${esc(v.name)}</option>`).join('');
+}
+
+/* ---------- tabs ---------- */
+function switchTab(t){
+  activeTab=t;
+  document.getElementById('pane-haz').style.display = t==='haz'?'':'none';
+  document.getElementById('pane-prog').style.display = t==='prog'?'':'none';
+  document.getElementById('tab-haz').classList.toggle('active',t==='haz');
+  document.getElementById('tab-prog').classList.toggle('active',t==='prog');
+}
+
+/* ================= TAB 1: HAZARDS ================= */
+function findDefaults(name){
+  const n=norm(name).toLowerCase();
+  for(const k in LIBRARY.processDefaults){ if(norm(k).toLowerCase()===n) return LIBRARY.processDefaults[k]; }
+  return null;
+}
+function segForProcess(siteType,proc){
+  const st=LIBRARY.siteTypes[siteType]; if(!st) return '';
+  const n=norm(proc).toLowerCase();
+  for(const seg in st.segs){ if(st.segs[seg].some(p=>norm(p).toLowerCase()===n)) return seg; }
+  return '';
+}
+function makeProcess(name,withDefaults){
+  const d=withDefaults?findDefaults(name):null;
+  return {id:uid(),name:name,seg:segForProcess(state.meta.siteType,name),
+    chemical:(d&&d.chemical?d.chemical.slice():[]),
+    physical:(d&&d.physical?d.physical.slice():[]),
+    biological:(d&&d.biological?d.biological.slice():[]),
+    ergonomic:(d&&d.ergonomic?d.ergonomic.slice():[]),
+    eng:(d&&d.eng?d.eng.slice():[]),
+    admin:(d&&d.admin?d.admin.map(a=>({name:a.name,desc:a.desc})):[]),
+    ppe:(d&&d.ppe?d.ppe.map(a=>({name:a.name,desc:a.desc,comment:a.comment||''})):[])};
+}
+function onSiteTypeChange(){
+  state.meta.siteType=document.getElementById('siteType').value;
+  const st=LIBRARY.siteTypes[state.meta.siteType];
+  document.getElementById('stdHint').textContent=st?`${st.processes.length} standard processes available (${st.example}).`:'';
+  state.processes.forEach(p=>p.seg=segForProcess(state.meta.siteType,p.name));
+  renderHaz();
+}
+function loadStandardProcesses(){
+  const st=LIBRARY.siteTypes[state.meta.siteType];
+  if(!st){toast('Select a site type first.');return;}
+  if(state.processes.length && !confirm('Replace the current process list with the standard set for '+state.meta.siteType+'?')) return;
+  state.processes=st.processes.map(p=>makeProcess(p,true));
+  renderHaz(); toast(`Loaded ${state.processes.length} standard processes.`);
+}
+function addProcessFromInput(){
+  const inp=document.getElementById('newProc'); const name=inp.value.trim();
+  if(!name){toast('Type or pick a process name.');return;}
+  state.processes.push(makeProcess(name,true)); inp.value=''; renderHaz();
+}
+function removeProcess(id){
+  const p=state.processes.find(x=>x.id===id);
+  if(confirm('Remove process "'+(p?p.name:'')+'"?')){state.processes=state.processes.filter(x=>x.id!==id);renderHaz();}
+}
+function addItem(id,field){ getP(id)[field].push(''); renderHaz(); focusLast(id,field); }
+function addPair(id,field){ getP(id)[field].push({name:'',desc:''}); renderHaz(); }
+function addPPE(id){ getP(id).ppe.push({name:'',desc:'',comment:''}); renderHaz(); }
+function getP(id){return state.processes.find(x=>x.id===id);}
+function setItem(id,field,i,v){ getP(id)[field][i]=v; }
+function delItem(id,field,i){ getP(id)[field].splice(i,1); renderHaz(); }
+function setPair(id,field,i,k,v){ getP(id)[field][i][k]=v; }
+function setName(id,v){ const p=getP(id); p.name=v; p.seg=segForProcess(state.meta.siteType,v); }
+function focusLast(id,field){ setTimeout(()=>{const els=document.querySelectorAll(`[data-f="${id}|${field}"]`);if(els.length)els[els.length-1].focus();},30); }
+
+function renderHaz(){
+  document.getElementById('siteType').value=state.meta.siteType||'';
+  const host=document.getElementById('procList');
+  if(!state.processes.length){host.innerHTML='<p class="empty">No processes yet. Load the standard set above, or add one below.</p>';}
+  else host.innerHTML=state.processes.map((p,idx)=>procCard(p,idx)).join('');
+}
+function listBlock(p,field,dl,label,color){
+  const items=p[field].map((v,i)=>`
+    <div class="item">
+      <input data-f="${p.id}|${field}" list="${dl}" value="${esc(v)}" oninput="setItem('${p.id}','${field}',${i},this.value)">
+      <span class="x" title="remove" onclick="delItem('${p.id}','${field}',${i})">&times;</span>
+    </div>`).join('');
+  return `<div class="grp"><div class="grp-title"><span class="dot" style="background:${color}"></span>${label}</div>
+    ${items||'<div class="empty">none</div>'}
+    <span class="add-link" onclick="addItem('${p.id}','${field}')">+ add</span></div>`;
+}
+function pairBlock(p,field,dlK,dlV,label,color,kPlace,vPlace){
+  const items=p[field].map((it,i)=>`
+    <div class="item">
+      <input class="k" list="${dlK}" placeholder="${kPlace}" value="${esc(it.name)}" oninput="setPair('${p.id}','${field}',${i},'name',this.value)">
+      <input list="${dlV}" placeholder="${vPlace}" value="${esc(it.desc)}" oninput="setPair('${p.id}','${field}',${i},'desc',this.value)">
+      <span class="x" title="remove" onclick="delItem('${p.id}','${field}',${i})">&times;</span>
+    </div>`).join('');
+  return `<div class="grp pairbox"><div class="grp-title"><span class="dot" style="background:${color}"></span>${label}</div>
+    ${items||'<div class="empty">none</div>'}
+    <span class="add-link" onclick="addPair('${p.id}','${field}')">+ add</span></div>`;
+}
+function ppeBlock(p){
+  const items=p.ppe.map((it,i)=>`
+    <div class="item">
+      <input class="k" list="dl_ppe" placeholder="Type" value="${esc(it.name)}" oninput="setPair('${p.id}','ppe',${i},'name',this.value)">
+      <input list="dl_ppedesc" placeholder="Description" value="${esc(it.desc)}" oninput="setPair('${p.id}','ppe',${i},'desc',this.value)">
+      <input list="dl_ppecomment" placeholder="Comment (MFG, Model, NRR…)" value="${esc(it.comment||'')}" oninput="setPair('${p.id}','ppe',${i},'comment',this.value)">
+      <span class="x" title="remove" onclick="delItem('${p.id}','ppe',${i})">&times;</span>
+    </div>`).join('');
+  return `<div class="grp pairbox"><div class="grp-title"><span class="dot" style="background:var(--ppe)"></span>PPE</div>
+    ${items||'<div class="empty">none</div>'}
+    <span class="add-link" onclick="addPPE('${p.id}')">+ add</span></div>`;
+}
+function procCard(p,idx){
+  return `<div class="proc">
+    <div class="proc-head">
+      <span class="pnum">${idx+1}</span>
+      <input class="pname" value="${esc(p.name)}" list="dl_proc" oninput="setName('${p.id}',this.value)" onchange="renderHaz()">
+      ${p.seg?`<span class="seg">SEG: ${esc(p.seg)}</span>`:''}
+      <button class="btn danger sm" onclick="removeProcess('${p.id}')">Remove</button>
+    </div>
+    <div class="proc-body"><div class="cols2">
+      <div>
+        <div class="subgrp">POTENTIAL HAZARDS</div>
+        ${listBlock(p,'chemical','dl_chem','Chemical','var(--chem)')}
+        ${listBlock(p,'physical','dl_phys','Physical','var(--phys)')}
+        ${listBlock(p,'biological','dl_bio','Biological','var(--bio)')}
+        ${listBlock(p,'ergonomic','dl_ergo','Ergonomic','var(--ergo)')}
+      </div>
+      <div>
+        <div class="subgrp">CONTROLS PRESENT</div>
+        ${listBlock(p,'eng','dl_eng','Engineering','var(--eng)')}
+        ${pairBlock(p,'admin','dl_admin','dl_admindesc','Administrative','var(--admin)','Program','Description')}
+        ${ppeBlock(p)}
+      </div>
+    </div></div>
+  </div>`;
+}
+
+/* ================= TAB 2: PROGRAM REVIEW ================= */
+function siteToken(){ return state.meta.site && state.meta.site.trim() ? state.meta.site.trim() : 'the facility'; }
+function applyToken(txt){
+  if(!txt) return '';
+  return txt.replace(/AASF\s*#?\s*1\b/g,siteToken()).replace(/FMS\s*#?\s*23\b/g,siteToken());
+}
+function makeProgram(def){
+  const applicable = def.defApplicable || 'Yes';
+  const yes = applicable==='Yes';
+  return {id:uid(),program:def.program,standard:def.standard||'',applicable:applicable,
+    notes: yes?applyToken(def.noteTemplate):'Not Applicable',
+    deficiency: yes?applyToken(def.deficiencyTemplate):'Not Applicable',
+    recommendation: yes?applyToken(def.recommendationTemplate):'Not Applicable',
+    rac: yes?(def.defRac||'4'):'N/A'};
+}
+function loadStandardPrograms(){
+  if(state.programs.length && !confirm('Replace the current program list with the standard checklist?')) return;
+  state.programs=LIBRARY.programReview.programs.map(makeProgram);
+  renderProg(); toast(`Loaded ${state.programs.length} standard programs.`);
+}
+function addProgramFromInput(){
+  const inp=document.getElementById('newProg'); const name=inp.value.trim();
+  if(!name){toast('Type a program name.');return;}
+  state.programs.push({id:uid(),program:name,standard:'',applicable:'Yes',notes:'',deficiency:'',recommendation:'',rac:'4'});
+  inp.value=''; renderProg();
+}
+function getPr(id){return state.programs.find(x=>x.id===id);}
+function setPr(id,field,v){ const p=getPr(id); p[field]=v; }
+function onApplicableChange(id,v){
+  const p=getPr(id); p.applicable=v;
+  if(v==='No'){
+    if(!p.notes||p.notes==='') p.notes='Not Applicable';
+    p.notes='Not Applicable'; p.deficiency='Not Applicable'; p.recommendation='Not Applicable'; p.rac='N/A';
+  }else{
+    ['notes','deficiency','recommendation'].forEach(f=>{ if(p[f]==='Not Applicable') p[f]=''; });
+    if(p.rac==='N/A') p.rac='4';
+  }
+  renderProg();
+}
+function removeProgram(id){
+  const p=getPr(id);
+  if(confirm('Remove "'+(p?p.program:'')+'"?')){state.programs=state.programs.filter(x=>x.id!==id);renderProg();}
+}
+function racClass(r){ r=String(r); if(r==='1'||r==='2')return'rac-12'; if(r==='3')return'rac-3'; if(r==='4')return'rac-4'; if(r==='5')return'rac-5'; return'rac-na'; }
+function renderProg(){
+  const host=document.getElementById('progListEl');
+  if(!state.programs.length){host.innerHTML='<p class="empty">No programs yet. Load the standard checklist above.</p>';return;}
+  const opts=LIBRARY.programReview;
+  host.innerHTML=state.programs.map((p,idx)=>{
+    const na=p.applicable==='No';
+    return `<div class="prog ${na?'na':''}">
+      <div class="prog-head">
+        <span class="pnum">${idx+1}</span>
+        <span class="ptitle">${esc(p.program)}</span>
+        <span class="racbadge ${racClass(p.rac)}">${esc(p.rac||'—')}</span>
+        <button class="btn danger sm" onclick="removeProgram('${p.id}')">Remove</button>
+      </div>
+      <div class="prog-body">
+        <div class="fld full"><label>Standard / Guidance</label>
+          <input value="${esc(p.standard)}" oninput="setPr('${p.id}','standard',this.value)"></div>
+        <div class="fld"><label>Applicable</label>
+          <select onchange="onApplicableChange('${p.id}',this.value)">
+            ${opts.applicableOptions.map(o=>`<option ${p.applicable===o?'selected':''}>${o}</option>`).join('')}
+          </select></div>
+        <div class="fld"><label>RAC</label>
+          <select onchange="setPr('${p.id}','rac',this.value);renderProg()">
+            ${opts.racOptions.map(o=>`<option ${p.rac===o?'selected':''}>${o}</option>`).join('')}
+          </select></div>
+        <div class="fld full"><label>Program Notes</label>
+          <textarea list="dl_pnotes" oninput="setPr('${p.id}','notes',this.value)">${esc(p.notes)}</textarea></div>
+        <div class="fld full"><label>Deficiencies</label>
+          <textarea list="dl_pdef" oninput="setPr('${p.id}','deficiency',this.value)">${esc(p.deficiency)}</textarea></div>
+        <div class="fld full"><label>Recommendations</label>
+          <textarea list="dl_prec" oninput="setPr('${p.id}','recommendation',this.value)">${esc(p.recommendation)}</textarea></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- shared meta ---------- */
+function bindMeta(){
+  const map={m_site:'site',m_addr:'addr',m_rpuid:'rpuid',m_bldg:'bldg',m_date:'date',m_surveyor:'surveyor'};
+  for(const id in map){ document.getElementById(id).addEventListener('input',e=>state.meta[map[id]]=e.target.value); }
+}
+function fillMetaInputs(){
+  document.getElementById('m_site').value=state.meta.site||'';
+  document.getElementById('m_addr').value=state.meta.addr||'';
+  document.getElementById('m_rpuid').value=state.meta.rpuid||'';
+  document.getElementById('m_bldg').value=state.meta.bldg||'';
+  document.getElementById('m_date').value=state.meta.date||'';
+  document.getElementById('m_surveyor').value=state.meta.surveyor||'';
+}
+
+/* ---------- save / load ---------- */
+function saveJSON(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  const nm=(state.meta.site||'IH_report').replace(/[^\w\-]+/g,'_');
+  a.href=URL.createObjectURL(blob); a.download=nm+'_IH_report.json'; a.click();
+  URL.revokeObjectURL(a.href); toast('Saved.');
+}
+function loadFromFile(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ state=normalizeState(JSON.parse(r.result)); fillMetaInputs(); renderHaz(); renderProg(); toast('Loaded "'+f.name+'".'); }catch(e){ alert('Could not read file: '+e.message);} };
+  r.readAsText(f); ev.target.value='';
+}
+function normalizeState(d){
+  d=d||{}; d.meta=d.meta||{};
+  d.processes=(d.processes||[]).map(p=>({id:p.id||uid(),name:p.name||'',seg:p.seg||'',
+    chemical:p.chemical||[],physical:p.physical||[],biological:p.biological||[],ergonomic:p.ergonomic||[],
+    eng:p.eng||[],admin:(p.admin||[]).map(a=>({name:a.name||'',desc:a.desc||''})),ppe:(p.ppe||[]).map(a=>({name:a.name||'',desc:a.desc||'',comment:a.comment||''}))}));
+  d.programs=(d.programs||[]).map(p=>({id:p.id||uid(),program:p.program||'',standard:p.standard||'',applicable:p.applicable||'Yes',
+    notes:p.notes||'',deficiency:p.deficiency||'',recommendation:p.recommendation||'',rac:p.rac||''}));
+  d.meta={siteType:d.meta.siteType||'',site:d.meta.site||'',addr:d.meta.addr||'',rpuid:d.meta.rpuid||'',bldg:d.meta.bldg||'',date:d.meta.date||'',surveyor:d.meta.surveyor||''};
+  return d;
+}
+function newSurvey(){ if((state.processes.length||state.programs.length) && !confirm('Start a new blank report? Unsaved changes will be lost.')) return; state=blankState(); fillMetaInputs(); renderHaz(); renderProg(); }
+
+function autosave(){ try{localStorage.setItem('ih_report_autosave',JSON.stringify(state));}catch(e){} }
+function tryRestore(){ try{const s=localStorage.getItem('ih_report_autosave'); if(s){const d=JSON.parse(s); if(d&&((d.processes&&d.processes.length)||(d.programs&&d.programs.length))){state=normalizeState(d);} }}catch(e){} }
+
+/* ---------- print: hazards ---------- */
+function ul(arr){ const a=(arr||[]).filter(x=>String(x).trim()); return a.length?'<ul>'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'<span class="none">None identified</span>'; }
+function ulPair(arr){ const a=(arr||[]).filter(x=>(x.name||x.desc)); return a.length?'<ul>'+a.map(x=>`<li>${esc(x.name)}${x.desc?': '+esc(x.desc):''}</li>`).join('')+'</ul>':'<span class="none">None identified</span>'; }
+function ulPPE(arr){ const a=(arr||[]).filter(x=>(x.name||x.desc||x.comment)); return a.length?'<ul>'+a.map(x=>`<li>${esc(x.name)}${x.desc?': '+esc(x.desc):''}${x.comment?` <span class="cmt">(${esc(x.comment)})</span>`:''}</li>`).join('')+'</ul>':'<span class="none">None identified</span>'; }
+function metaBlock(){
+  const m=state.meta; const st=LIBRARY.siteTypes[m.siteType];
+  return `<div class="rpt-meta">
+    <div><b>Site:</b> ${esc(m.site)||'—'}</div><div><b>Address:</b> ${esc(m.addr)||'—'}</div>
+    <div><b>Shop Type:</b> ${esc(m.siteType)||'—'}</div><div><b>RPUID:</b> ${esc(m.rpuid)||'—'}</div>
+    <div><b>Building #:</b> ${esc(m.bldg)||'—'}</div><div><b>Date:</b> ${esc(m.date)||'—'}</div>
+    <div><b>Surveyor / IH:</b> ${esc(m.surveyor)||'—'}</div><div></div></div>`;
+}
+function buildPrintHaz(){
+  const m=state.meta; const st=LIBRARY.siteTypes[m.siteType];
+  const rows=state.processes.map((p,i)=>`
+    <tr>
+      <td class="cnum" style="text-align:center">${i+1}</td>
+      <td class="pcell">${esc(p.name)}${p.seg?`<br><span style="font-weight:400;font-size:7px;color:#555">SEG: ${esc(p.seg)}</span>`:''}</td>
+      <td class="c-chem">${ul(p.chemical)}</td><td class="c-phys">${ul(p.physical)}</td><td class="c-bio">${ul(p.biological)}</td><td class="c-ergo">${ul(p.ergonomic)}</td>
+      <td class="c-eng">${ul(p.eng)}</td><td class="c-admin">${ulPair(p.admin)}</td><td class="c-ppe">${ulPPE(p.ppe)}</td>
+    </tr>`).join('');
+  return `<div class="rpt-head"><h1>Process Hazards &amp; Controls</h1>
+    <div class="sub">${esc(m.site||'')}${st?' — '+esc(st.name)+' ('+m.siteType+')':''}</div></div>
+    ${metaBlock()}
+    <table class="rpt">
+    <colgroup><col style="width:3%"><col style="width:11%"><col style="width:15%"><col style="width:9%"><col style="width:8%"><col style="width:9%"><col style="width:11%"><col style="width:12%"><col style="width:13%"></colgroup>
+    <thead>
+      <tr class="grp"><th rowspan="2">#</th><th rowspan="2">Process</th><th colspan="4" class="g-haz">Potential Hazards</th><th colspan="3" class="g-ctrl">Controls Present</th></tr>
+      <tr><th class="h-chem">Chemical</th><th class="h-phys">Physical</th><th class="h-bio">Biological</th><th class="h-ergo">Ergonomic</th><th class="h-eng">Engineering</th><th class="h-admin">Administrative</th><th class="h-ppe">PPE</th></tr>
+    </thead>
+    <tbody>${rows||'<tr><td colspan="9" style="text-align:center;padding:18px">No processes entered.</td></tr>'}</tbody>
+    </table>`;
+}
+function buildPrintProg(){
+  const m=state.meta; const st=LIBRARY.siteTypes[m.siteType];
+  const rows=state.programs.map(p=>{
+    const na=p.applicable==='No';
+    return `<tr class="${na?'row-na':''}">
+      <td class="cp-prog">${esc(p.program)}</td>
+      <td class="cp-std">${esc(p.standard)}</td>
+      <td style="text-align:center">${esc(p.applicable)}</td>
+      <td>${esc(p.notes)||'—'}</td>
+      <td class="cp-def">${esc(p.deficiency)||'—'}</td>
+      <td class="cp-rec">${esc(p.recommendation)||'—'}</td>
+      <td style="text-align:center"><span class="rac ${racClass(p.rac)}">${esc(p.rac||'—')}</span></td>
+    </tr>`;}).join('');
+  return `<div class="rpt-head"><h1>Program Review, Deficiencies &amp; Recommendations</h1>
+    <div class="sub">${esc(m.site||'')}${st?' — '+esc(st.name)+' ('+m.siteType+')':''}</div></div>
+    ${metaBlock()}
+    <table class="rpt pr">
+    <colgroup><col style="width:11%"><col style="width:14%"><col style="width:6%"><col style="width:23%"><col style="width:20%"><col style="width:22%"><col style="width:4%"></colgroup>
+    <thead><tr><th class="hp-prog">Program</th><th class="hp-prog">Standard / Guidance</th><th>Applic.</th><th>Program Notes</th><th class="hp-def">Deficiencies</th><th class="hp-rec">Recommendations</th><th>RAC</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="7" style="text-align:center;padding:18px">No programs entered.</td></tr>'}</tbody>
+    </table>
+    <div class="rpt-legend"><b>RAC:</b>
+      <span><i style="background:#c53030"></i>1–2 Critical/High</span>
+      <span><i style="background:#dd6b20"></i>3 Moderate</span>
+      <span><i style="background:#d69e2e"></i>4 Low</span>
+      <span><i style="background:#718096"></i>5 Minimal</span>
+      <span><i style="background:#cbd5e0"></i>N/A</span></div>`;
+}
+function openPreview(){
+  const area=document.getElementById('printArea');
+  const body = activeTab==='prog' ? buildPrintProg() : buildPrintHaz();
+  area.innerHTML='<div class="nobar" style="max-width:1180px;margin:14px auto 0;text-align:center">'+
+    '<button class="btn primary" id="pbtn">&#128424; Print / Save as PDF</button> '+
+    '<button class="btn" id="ebtn">&larr; Back to editor</button></div>'+body;
+  area.classList.add('preview');
+  document.querySelector('.topbar').style.display='none';
+  document.querySelector('.tabbar').style.display='none';
+  document.querySelector('.tabwrap').style.display='none';
+  window.scrollTo(0,0);
+  document.getElementById('pbtn').onclick=()=>window.print();
+  document.getElementById('ebtn').onclick=closePreview;
+}
+function closePreview(){
+  const area=document.getElementById('printArea');
+  area.classList.remove('preview'); area.innerHTML='';
+  document.querySelector('.topbar').style.display='';
+  document.querySelector('.tabbar').style.display='';
+  document.querySelector('.tabwrap').style.display='';
+}
+window.addEventListener('beforeprint',()=>{ const a=document.getElementById('printArea'); if(!a.innerHTML.trim()) a.innerHTML=(activeTab==='prog'?buildPrintProg():buildPrintHaz()); });
+
+let toastTimer=null;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600); }
+
+document.addEventListener('input',autosave);
+document.addEventListener('click',()=>setTimeout(autosave,50));
+initDatalists(); initSiteTypes(); bindMeta(); tryRestore(); fillMetaInputs(); renderHaz(); renderProg();
+</script>
+</body>
+</html>
