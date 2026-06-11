@@ -75,6 +75,42 @@
       display: block
     }
 
+    .topbar .ver {
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, .15);
+      color: #fff;
+      padding: 3px 9px;
+      border-radius: 10px;
+      letter-spacing: .5px;
+      white-space: nowrap
+    }
+
+    .drive-list li .rowmain {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+      flex: 1;
+      cursor: pointer
+    }
+
+    .drive-list li .del {
+      color: var(--red);
+      font-weight: 700;
+      font-size: 16px;
+      line-height: 1;
+      padding: 4px 9px;
+      border-radius: 5px;
+      cursor: pointer;
+      flex-shrink: 0;
+      user-select: none
+    }
+
+    .drive-list li .del:hover {
+      background: #fff0f0
+    }
+
     .btn {
       border: 0;
       border-radius: 6px;
@@ -1029,6 +1065,7 @@
       </div>
     </div>
     <button class="btn primary sm" onclick="openPreview()">Preview / Print this tab</button>
+    <span class="ver" id="appVer" title="App version">v1</span>
   </div>
 
   <div class="tabbar">
@@ -1646,10 +1683,11 @@
         ul.innerHTML = '';
         files.forEach(f => {
           const li = document.createElement('li');
-          li.innerHTML = '<span class="fn"></span><span class="fm"></span>';
+          li.innerHTML = '<div class="rowmain"><span class="fn"></span><span class="fm"></span></div><span class="del" title="Delete">&times;</span>';
           li.querySelector('.fn').textContent = f.name + ((f.site && f.site !== f.name) ? (' — ' + f.site) : '');
           li.querySelector('.fm').textContent = f.updated ? new Date(f.updated).toLocaleString() : '';
-          li.onclick = () => openTeamFile(f);
+          li.querySelector('.rowmain').onclick = () => openTeamFile(f);
+          li.querySelector('.del').onclick = (ev) => { ev.stopPropagation(); deleteTeamFile(f); };
           ul.appendChild(li);
         });
       } catch (e) { ul.innerHTML = '<li class="info"><span class="fm">' + esc(e.message) + '</span></li>'; }
@@ -1664,6 +1702,16 @@
         closeModal('teamOpenModal');
         toast('Loaded from team: ' + f.name);
       } catch (e) { alert('Could not open report:\n' + e.message); }
+    }
+    async function deleteTeamFile(f) {
+      if (!confirm('Delete “' + f.name + '” from the team store?\n\nThis removes it for everyone and cannot be undone.')) return;
+      try {
+        toast('Deleting…');
+        await teamCall('delete', { id: f.id });
+        if (linkedFile && linkedFile.id === f.id) setLinked(null);
+        toast('Deleted: ' + f.name);
+        refreshTeamList();
+      } catch (e) { alert('Delete failed:\n' + e.message); }
     }
 
     document.addEventListener('input', autosave);
