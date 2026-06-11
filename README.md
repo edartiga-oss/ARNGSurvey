@@ -4,12 +4,13 @@ A single-file web app for building standardized **Industrial Hygiene** survey de
 
 ## Features
 
-Two tabs that share one Site Information panel:
+Three tabs that share one Site Information panel:
 
-1. **Hazards & Controls** — per-process inventory of chemical / physical / biological / ergonomic hazards and engineering / administrative / PPE controls (including PPE comment: MFG, model, NRR). Pick a site type (AASF, CSMS, FMS, MATES, UTES) and load its standard processes pre-filled from the example library.
-2. **Program Review, Deficiencies & Recommendations** — the 19 standard OSHA / Army programs with CFR / DA-PAM references, typical program notes, deficiencies, recommendations, and color-coded RAC. Load the standard checklist, then edit.
+1. **Process Descriptions** — a narrative per process (with frequency &amp; duration), pre-filled from the example reports for the chosen site type; the site name is inserted automatically. Edit freely.
+2. **Hazards & Controls** — per-process inventory of chemical / physical / biological / ergonomic hazards and engineering / administrative / PPE controls (including PPE comment: MFG, model, NRR). Pick a site type (AASF, CSMS, FMS, MATES, UTES) and load its standard processes pre-filled from the example library.
+3. **Program Review, Deficiencies & Recommendations** — the 19 standard OSHA / Army programs with CFR / DA-PAM references, typical program notes, deficiencies, recommendations, and color-coded RAC. Load the standard checklist, then edit.
 
-Both tabs produce a clean, colored, landscape printout (Print / Save as PDF). The **☁ Drive** menu saves to / opens from one shared Google Sheet so the whole team works from the same set of reports, and the browser auto-saves your current work between sessions (see below).
+Each tab produces a clean, colored, landscape printout (Print / Save as PDF). The **☁ Drive** menu saves to / opens from one shared Google Sheet so the whole team works from the same set of reports, and the browser auto-saves your current work between sessions (see below).
 
 ## Use it
 
