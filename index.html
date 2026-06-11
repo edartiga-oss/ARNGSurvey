@@ -167,7 +167,6 @@
   .drive-list .fn{font-weight:600;color:var(--navy);font-size:13px}
   .drive-list .fm{font-size:11px;color:var(--muted)}
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div class="topbar">
@@ -177,15 +176,14 @@
   <input type="file" id="loadFile" accept=".json" style="display:none" onchange="loadFromFile(event)">
   <button class="btn sm" onclick="saveJSON()">Save (.json)</button>
   <div class="menu">
-    <button class="btn sm" id="driveBtn" onclick="toggleDriveMenu(event)">&#9729; Drive &#9662;</button>
-    <div class="menu-pop" id="driveMenu">
-      <div class="mlabel" id="driveLinked">Not linked to a Drive file</div>
-      <button onclick="driveSave()">&#9729; Save to Drive</button>
-      <button onclick="driveSaveAsNew()">&#10133; Save as new file&hellip;</button>
-      <button onclick="openDriveOpen()">&#128194; Open from Drive&hellip;</button>
+    <button class="btn sm" id="teamBtn" onclick="toggleTeamMenu(event)">&#128101; Team &#9662;</button>
+    <div class="menu-pop" id="teamMenu">
+      <div class="mlabel" id="teamLinked">Not linked to a team report</div>
+      <button onclick="teamSave()">&#128190; Save to Team</button>
+      <button onclick="teamSaveAsNew()">&#10133; Save as new report&hellip;</button>
+      <button onclick="openTeamOpen()">&#128194; Open from Team&hellip;</button>
       <div class="sep"></div>
-      <button onclick="openDriveSettings()">&#9881; Drive settings&hellip;</button>
-      <button onclick="driveSignOut()" id="driveSignOutBtn" style="display:none">Sign out of Drive</button>
+      <button onclick="openTeamSettings()">&#9881; Team settings&hellip;</button>
     </div>
   </div>
   <button class="btn primary sm" onclick="openPreview()">Preview / Print this tab</button>
@@ -254,42 +252,36 @@
 <div id="printArea"></div>
 <div class="toast" id="toast"></div>
 
-<!-- Google Drive setup modal -->
-<div class="modal-bg" id="driveSettingsModal">
+<!-- Team store settings modal -->
+<div class="modal-bg" id="teamSettingsModal">
   <div class="modal">
-    <div class="modal-head"><h3>&#9729; Google Drive setup</h3><button class="x" onclick="closeModal('driveSettingsModal')" title="Close">&times;</button></div>
+    <div class="modal-head"><h3>&#128101; Team store settings</h3><button class="x" onclick="closeModal('teamSettingsModal')" title="Close">&times;</button></div>
     <div class="modal-body">
-      <p>To save reports to your Google Drive, this app needs a free Google OAuth <b>Client ID</b>. This is a one-time setup and the ID is stored only in this browser.</p>
-      <ol>
-        <li>Open the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a> and create (or pick) a project.</li>
-        <li>In <b>APIs &amp; Services &rarr; Library</b>, enable the <b>Google Drive API</b>.</li>
-        <li>In <b>APIs &amp; Services &rarr; OAuth consent screen</b>, choose <b>External</b>, fill in an app name + your email, and add your Google account under <b>Test users</b>.</li>
-        <li>In <b>APIs &amp; Services &rarr; Credentials</b>, create an <b>OAuth client ID</b> of type <b>Web application</b>.</li>
-        <li>Under <b>Authorized JavaScript origins</b>, add this site's origin:<br><code id="originCode"></code></li>
-        <li>Copy the Client ID and paste it below.</li>
-      </ol>
-      <div class="fld"><label>OAuth Client ID</label>
-        <input id="clientIdInput" placeholder="1234567890-abc123.apps.googleusercontent.com"></div>
-      <p class="hint" style="margin-top:8px">Uses the <code>drive.file</code> scope, so the app can only see the files it creates here &mdash; never the rest of your Drive.</p>
+      <p>Reports are shared through a Google Apps Script web app backed by one Google Sheet. Set it up once (the backend code and step-by-step instructions are in <code>apps-script-team-store.gs</code>), then paste the deployment's <b>Web App URL</b> and the matching <b>shared key</b> below.</p>
+      <div class="fld" style="margin-top:8px"><label>Web App URL</label>
+        <input id="teamUrlInput" placeholder="https://script.google.com/macros/s/AKfyc.../exec"></div>
+      <div class="fld" style="margin-top:10px"><label>Shared key</label>
+        <input id="teamKeyInput" placeholder="must match SHARED_KEY in the script"></div>
+      <p class="hint" style="margin-top:10px">For everyone to use it with no setup, put these same two values into <code>TEAM_API_URL</code> / <code>TEAM_KEY</code> near the top of the script in <code>index.html</code> and redeploy. Values entered here are stored only in this browser and override the built-in ones.</p>
     </div>
     <div class="modal-foot">
-      <button class="btn" onclick="closeModal('driveSettingsModal')">Cancel</button>
-      <button class="btn primary" onclick="saveClientId()">Save Client ID</button>
+      <button class="btn" onclick="closeModal('teamSettingsModal')">Cancel</button>
+      <button class="btn primary" onclick="saveTeamSettings()">Save</button>
     </div>
   </div>
 </div>
 
-<!-- Open from Drive modal -->
-<div class="modal-bg" id="driveOpenModal">
+<!-- Open team report modal -->
+<div class="modal-bg" id="teamOpenModal">
   <div class="modal">
-    <div class="modal-head"><h3>&#128194; Open from Google Drive</h3><button class="x" onclick="closeModal('driveOpenModal')" title="Close">&times;</button></div>
+    <div class="modal-head"><h3>&#128194; Open team report</h3><button class="x" onclick="closeModal('teamOpenModal')" title="Close">&times;</button></div>
     <div class="modal-body">
-      <p class="hint">Reports this app has saved to your Drive. Click one to load it.</p>
-      <ul class="drive-list" id="driveFileList"></ul>
+      <p class="hint">Shared reports saved by your team. Click one to load it.</p>
+      <ul class="drive-list" id="teamFileList"></ul>
     </div>
     <div class="modal-foot">
-      <button class="btn" onclick="closeModal('driveOpenModal')">Close</button>
-      <button class="btn" onclick="refreshDriveList()">&#8635; Refresh</button>
+      <button class="btn" onclick="closeModal('teamOpenModal')">Close</button>
+      <button class="btn" onclick="refreshTeamList()">&#8635; Refresh</button>
     </div>
   </div>
 </div>
@@ -685,187 +677,125 @@ window.addEventListener('beforeprint',()=>{ const a=document.getElementById('pri
 let toastTimer=null;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600); }
 
-/* ===================== Google Drive cloud sync ===================== */
-/* Client-side only: Google Identity Services for OAuth + Drive REST API.
-   Scope drive.file = the app can see ONLY the files it creates here. */
-const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
-/* MULTI-USER: paste your published OAuth Client ID between the quotes below and
-   redeploy, so every visitor uses it automatically (each still signs into their
-   own Google account and saves to their own Drive). Leave '' to require each
-   user to enter their own under Drive settings. */
-const DEFAULT_CLIENT_ID='226096228043-p52m5fcuj11vgrk9mnh8pho76e830a0k.apps.googleusercontent.com';
-const CLIENT_ID_KEY='ih_gdrive_client_id';
-const LINKED_KEY='ih_gdrive_linked';
-let tokenClient=null, accessToken=null, tokenExpiry=0, pendingAuth=null, tokenClientId=null;
-let linkedFile=loadLinked();   // {id,name} of the Drive file this report is tied to, or null
+/* ===================== Shared team store (Google Sheets via Apps Script) ===================== */
+/* The app talks to a Google Apps Script web app that reads/writes one shared
+   Google Sheet, so the whole team sees the same set of reports. Paste your
+   deployed Web App URL and shared key below and redeploy, so everyone uses
+   them with no setup. (They can also be set per-browser under Team settings.)
+   Backend code + step-by-step setup: see apps-script-team-store.gs */
+const TEAM_API_URL='';     // e.g. https://script.google.com/macros/s/AKfyc.../exec
+const TEAM_KEY='';         // must match SHARED_KEY in the Apps Script
+const TEAM_URL_KEY='ih_team_url';
+const TEAM_KEY_KEY='ih_team_key';
+const LINKED_KEY='ih_team_linked';
+let linkedFile=loadLinked();   // {id,name} of the team report this is tied to, or null
 
-function getClientId(){ return (localStorage.getItem(CLIENT_ID_KEY)||DEFAULT_CLIENT_ID||'').trim(); }
+function getTeamUrl(){ return (localStorage.getItem(TEAM_URL_KEY)||TEAM_API_URL||'').trim(); }
+function getTeamKey(){ return (localStorage.getItem(TEAM_KEY_KEY)||TEAM_KEY||'').trim(); }
 function loadLinked(){ try{ return JSON.parse(localStorage.getItem(LINKED_KEY)||'null'); }catch(e){ return null; } }
-function setLinked(f){ linkedFile=f||null; try{ f?localStorage.setItem(LINKED_KEY,JSON.stringify(f)):localStorage.removeItem(LINKED_KEY); }catch(e){} updateDriveUI(); }
+function setLinked(f){ linkedFile=f||null; try{ f?localStorage.setItem(LINKED_KEY,JSON.stringify(f)):localStorage.removeItem(LINKED_KEY); }catch(e){} updateTeamUI(); }
 
-function updateDriveUI(){
-  const el=document.getElementById('driveLinked');
-  if(el) el.textContent=linkedFile ? ('Linked: '+linkedFile.name) : 'Not linked to a Drive file';
-  const so=document.getElementById('driveSignOutBtn');
-  if(so) so.style.display=accessToken?'flex':'none';
+function updateTeamUI(){
+  const el=document.getElementById('teamLinked');
+  if(el) el.textContent=linkedFile ? ('Linked: '+linkedFile.name) : 'Not linked to a team report';
 }
 
 /* dropdown menu + modals */
-function toggleDriveMenu(ev){ ev.stopPropagation(); document.getElementById('driveMenu').classList.toggle('show'); updateDriveUI(); }
-document.addEventListener('click',()=>{ const m=document.getElementById('driveMenu'); if(m) m.classList.remove('show'); });
+function toggleTeamMenu(ev){ ev.stopPropagation(); document.getElementById('teamMenu').classList.toggle('show'); updateTeamUI(); }
+document.addEventListener('click',()=>{ const m=document.getElementById('teamMenu'); if(m) m.classList.remove('show'); });
 function openModal(id){ document.getElementById(id).classList.add('show'); }
 function closeModal(id){ document.getElementById(id).classList.remove('show'); }
-function openDriveSettings(){
-  document.getElementById('originCode').textContent=location.origin;
-  document.getElementById('clientIdInput').value=getClientId();
-  openModal('driveSettingsModal');
+function openTeamSettings(){
+  document.getElementById('teamUrlInput').value=getTeamUrl();
+  document.getElementById('teamKeyInput').value=getTeamKey();
+  openModal('teamSettingsModal');
 }
-function saveClientId(){
-  const v=document.getElementById('clientIdInput').value.trim();
-  localStorage.setItem(CLIENT_ID_KEY,v);
-  tokenClient=null; accessToken=null; tokenExpiry=0; tokenClientId=null;   // re-init with new id
-  updateDriveUI(); closeModal('driveSettingsModal');
-  toast(v?'Drive Client ID saved.':'Client ID cleared.');
+function saveTeamSettings(){
+  localStorage.setItem(TEAM_URL_KEY, document.getElementById('teamUrlInput').value.trim());
+  localStorage.setItem(TEAM_KEY_KEY, document.getElementById('teamKeyInput').value.trim());
+  closeModal('teamSettingsModal');
+  toast('Team settings saved.');
 }
 
-/* preflight: hosted site + client id required before any Drive call */
-function drivePreflight(){
-  if(location.protocol==='file:'){ alert('Google Drive sync needs the hosted site (an https:// URL), not the local file.\n\nOpen your GitHub Pages link and try again.'); return false; }
-  if(!getClientId()){ openDriveSettings(); return false; }
+/* need a configured endpoint before any call */
+function teamPreflight(){
+  if(!getTeamUrl() || !getTeamKey()){ openTeamSettings(); return false; }
   return true;
 }
 
-/* wait for the async GIS library, then get/refresh an access token */
-function waitForGoogle(){
-  return new Promise((resolve,reject)=>{
-    if(window.google&&google.accounts&&google.accounts.oauth2) return resolve();
-    let n=0; const t=setInterval(()=>{
-      if(window.google&&google.accounts&&google.accounts.oauth2){ clearInterval(t); resolve(); }
-      else if(++n>40){ clearInterval(t); reject(new Error('Google sign-in library did not load. Check your connection or any ad/script blocker.')); }
-    },150);
-  });
-}
-async function ensureToken(){
-  const cid=getClientId();
-  if(!cid){ openDriveSettings(); throw new Error('Add your Google OAuth Client ID first (Drive settings).'); }
-  if(accessToken && Date.now()<tokenExpiry) return accessToken;
-  await waitForGoogle();
-  if(!tokenClient || tokenClientId!==cid){
-    tokenClientId=cid;
-    tokenClient=google.accounts.oauth2.initTokenClient({
-      client_id:cid, scope:DRIVE_SCOPE,
-      callback:(resp)=>{
-        if(resp&&resp.error){ if(pendingAuth){ pendingAuth.reject(new Error(resp.error_description||resp.error)); pendingAuth=null; } return; }
-        accessToken=resp.access_token; tokenExpiry=Date.now()+((resp.expires_in||3600)*1000)-60000; updateDriveUI();
-        if(pendingAuth){ pendingAuth.resolve(accessToken); pendingAuth=null; }
-      }
-    });
-  }
-  return new Promise((resolve,reject)=>{
-    pendingAuth={resolve,reject};
-    try{ tokenClient.requestAccessToken({prompt:''}); }
-    catch(e){ pendingAuth=null; reject(e); }
-  });
-}
-function driveSignOut(){
-  if(accessToken && window.google&&google.accounts&&google.accounts.oauth2){ try{ google.accounts.oauth2.revoke(accessToken,()=>{}); }catch(e){} }
-  accessToken=null; tokenExpiry=0; updateDriveUI(); toast('Signed out of Drive.');
-}
-
-/* Drive REST helpers (multipart create, media update, list, download) */
-async function driveCreate(name,obj){
-  const token=await ensureToken();
-  const boundary='ihr'+Math.random().toString(36).slice(2);
-  const meta={name:name,mimeType:'application/json'};
-  const body='--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(meta)+
-    '\r\n--'+boundary+'\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify(obj,null,2)+'\r\n--'+boundary+'--';
-  const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,modifiedTime',{
-    method:'POST', headers:{Authorization:'Bearer '+token,'Content-Type':'multipart/related; boundary='+boundary}, body:body });
-  if(!res.ok) throw new Error('Create failed ('+res.status+'): '+await res.text());
-  return res.json();
-}
-async function driveUpdate(id,obj){
-  const token=await ensureToken();
-  const res=await fetch('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=media&fields=id,name,modifiedTime',{
-    method:'PATCH', headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'}, body:JSON.stringify(obj,null,2) });
-  if(res.status===404) return null;   // linked file was deleted in Drive
-  if(!res.ok) throw new Error('Save failed ('+res.status+'): '+await res.text());
-  return res.json();
-}
-async function driveListFiles(){
-  const token=await ensureToken();
-  const q=encodeURIComponent("mimeType='application/json' and trashed=false");
-  const res=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,modifiedTime)',{
-    headers:{Authorization:'Bearer '+token} });
-  if(!res.ok) throw new Error('List failed ('+res.status+'): '+await res.text());
-  return (await res.json()).files||[];
-}
-async function driveDownload(id){
-  const token=await ensureToken();
-  const res=await fetch('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media',{ headers:{Authorization:'Bearer '+token} });
-  if(!res.ok) throw new Error('Download failed ('+res.status+'): '+await res.text());
-  return res.json();
+/* call the Apps Script web app. POST as text/plain so the browser treats it as a
+   "simple" request and skips the CORS preflight that Apps Script can't answer. */
+async function teamCall(action, payload){
+  const body=JSON.stringify(Object.assign({action:action, key:getTeamKey()}, payload||{}));
+  let res;
+  try{ res=await fetch(getTeamUrl(),{ method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body }); }
+  catch(e){ throw new Error('Could not reach the team server. Check the Web App URL and your connection.'); }
+  if(!res.ok) throw new Error('Server error ('+res.status+').');
+  let data; try{ data=await res.json(); }
+  catch(e){ throw new Error('Unexpected response from the team server — double-check the Web App URL (it should end in /exec).'); }
+  if(!data.ok) throw new Error(data.error||'Request failed.');
+  return data;
 }
 
 /* high-level actions wired to the menu */
-function defaultName(){ return (state.meta.site||'IH_report').replace(/[^\w\-]+/g,'_')+'_IH_report.json'; }
-async function driveSave(){
-  if(!drivePreflight()) return;
+async function teamSave(){
+  if(!teamPreflight()) return;
   try{
     if(linkedFile){
-      toast('Saving to Drive…');
-      const f=await driveUpdate(linkedFile.id,state);
-      if(!f){ setLinked(null); return driveSaveAsNew(); }   // deleted -> save as new
-      setLinked({id:f.id,name:f.name});
-      toast('Saved to Drive: '+f.name);
+      toast('Saving to team…');
+      const r=await teamCall('save',{id:linkedFile.id, name:linkedFile.name, report:state});
+      setLinked({id:r.id,name:r.name});
+      toast('Saved to team: '+r.name);
     } else {
-      await driveSaveAsNew();
+      await teamSaveAsNew();
     }
-  }catch(e){ alert('Drive save failed:\n'+e.message); }
+  }catch(e){ alert('Team save failed:\n'+e.message); }
 }
-async function driveSaveAsNew(){
-  if(!drivePreflight()) return;
+async function teamSaveAsNew(){
+  if(!teamPreflight()) return;
   try{
-    const name=prompt('Save to Google Drive as:', defaultName());
+    const name=prompt('Save to the team store as:', state.meta.site||'IH report');
     if(!name) return;
-    toast('Saving to Drive…');
-    const f=await driveCreate(/\.json$/i.test(name)?name:name+'.json', state);
-    setLinked({id:f.id,name:f.name});
-    toast('Saved to Drive: '+f.name);
-  }catch(e){ alert('Drive save failed:\n'+e.message); }
+    toast('Saving to team…');
+    const r=await teamCall('save',{name:name, report:state});
+    setLinked({id:r.id,name:r.name});
+    toast('Saved to team: '+r.name);
+  }catch(e){ alert('Team save failed:\n'+e.message); }
 }
-function openDriveOpen(){ if(!drivePreflight()) return; openModal('driveOpenModal'); refreshDriveList(); }
-async function refreshDriveList(){
-  const ul=document.getElementById('driveFileList');
+function openTeamOpen(){ if(!teamPreflight()) return; openModal('teamOpenModal'); refreshTeamList(); }
+async function refreshTeamList(){
+  const ul=document.getElementById('teamFileList');
   ul.innerHTML='<li class="info"><span class="fm">Loading…</span></li>';
   try{
-    const files=await driveListFiles();
-    if(!files.length){ ul.innerHTML='<li class="info"><span class="fm">No reports saved to this Drive yet. Use “Save to Drive” first.</span></li>'; return; }
+    const r=await teamCall('list');
+    const files=r.files||[];
+    if(!files.length){ ul.innerHTML='<li class="info"><span class="fm">No team reports yet. Use “Save to Team” first.</span></li>'; return; }
     ul.innerHTML='';
     files.forEach(f=>{
       const li=document.createElement('li');
       li.innerHTML='<span class="fn"></span><span class="fm"></span>';
-      li.querySelector('.fn').textContent=f.name;
-      li.querySelector('.fm').textContent=f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'';
-      li.onclick=()=>openDriveFile(f);
+      li.querySelector('.fn').textContent=f.name+((f.site&&f.site!==f.name)?(' — '+f.site):'');
+      li.querySelector('.fm').textContent=f.updated?new Date(f.updated).toLocaleString():'';
+      li.onclick=()=>openTeamFile(f);
       ul.appendChild(li);
     });
   }catch(e){ ul.innerHTML='<li class="info"><span class="fm">'+esc(e.message)+'</span></li>'; }
 }
-async function openDriveFile(f){
+async function openTeamFile(f){
   try{
     toast('Opening…');
-    const data=await driveDownload(f.id);
-    state=normalizeState(data); fillMetaInputs(); renderHaz(); renderProg();
+    const r=await teamCall('load',{id:f.id});
+    if(!r.report) throw new Error('That report is empty or was removed.');
+    state=normalizeState(r.report); fillMetaInputs(); renderHaz(); renderProg();
     setLinked({id:f.id,name:f.name});
-    closeModal('driveOpenModal');
-    toast('Loaded from Drive: '+f.name);
-  }catch(e){ alert('Could not open file:\n'+e.message); }
+    closeModal('teamOpenModal');
+    toast('Loaded from team: '+f.name);
+  }catch(e){ alert('Could not open report:\n'+e.message); }
 }
 
 document.addEventListener('input',autosave);
 document.addEventListener('click',()=>setTimeout(autosave,50));
-initDatalists(); initSiteTypes(); bindMeta(); tryRestore(); fillMetaInputs(); renderHaz(); renderProg(); updateDriveUI();
+initDatalists(); initSiteTypes(); bindMeta(); tryRestore(); fillMetaInputs(); renderHaz(); renderProg(); updateTeamUI();
 </script>
 </body>
 </html>
