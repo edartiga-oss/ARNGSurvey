@@ -1049,23 +1049,19 @@
   <div class="topbar">
     <h1>Industrial Hygiene Report Builder<span class="brand">Hazards table &amp; Program Review — data entry &amp;
         standardized printouts</span></h1>
-    <button class="btn ghost sm" onclick="newSurvey()">New</button>
-    <button class="btn ghost sm" onclick="document.getElementById('loadFile').click()">Open…</button>
-    <input type="file" id="loadFile" accept=".json" style="display:none" onchange="loadFromFile(event)">
-    <button class="btn sm" onclick="saveJSON()">Save (.json)</button>
     <div class="menu">
-      <button class="btn sm" id="teamBtn" onclick="toggleTeamMenu(event)">&#128101; Team &#9662;</button>
+      <button class="btn sm" id="teamBtn" onclick="toggleTeamMenu(event)">&#9729; Drive &#9662;</button>
       <div class="menu-pop" id="teamMenu">
-        <div class="mlabel" id="teamLinked">Not linked to a team report</div>
-        <button onclick="teamSave()">&#128190; Save to Team</button>
+        <div class="mlabel" id="teamLinked">Not linked to a Drive report</div>
+        <button onclick="teamSave()">&#128190; Save to Drive</button>
         <button onclick="teamSaveAsNew()">&#10133; Save as new report&hellip;</button>
-        <button onclick="openTeamOpen()">&#128194; Open from Team&hellip;</button>
+        <button onclick="openTeamOpen()">&#128194; Open from Drive&hellip;</button>
         <div class="sep"></div>
-        <button onclick="openTeamSettings()">&#9881; Team settings&hellip;</button>
+        <button onclick="openTeamSettings()">&#9881; Drive settings&hellip;</button>
       </div>
     </div>
     <button class="btn primary sm" onclick="openPreview()">Preview / Print this tab</button>
-    <span class="ver" id="appVer" title="App version">v1</span>
+    <span class="ver" id="appVer" title="App version">v2</span>
   </div>
 
   <div class="tabbar">
@@ -1141,11 +1137,11 @@
   <div id="printArea"></div>
   <div class="toast" id="toast"></div>
 
-  <!-- Team store settings modal -->
+  <!-- Drive settings modal -->
   <div class="modal-bg" id="teamSettingsModal">
     <div class="modal">
       <div class="modal-head">
-        <h3>&#128101; Team store settings</h3><button class="x" onclick="closeModal('teamSettingsModal')"
+        <h3>&#9729; Drive settings</h3><button class="x" onclick="closeModal('teamSettingsModal')"
           title="Close">&times;</button>
       </div>
       <div class="modal-body">
@@ -1169,15 +1165,15 @@
     </div>
   </div>
 
-  <!-- Open team report modal -->
+  <!-- Open Drive report modal -->
   <div class="modal-bg" id="teamOpenModal">
     <div class="modal">
       <div class="modal-head">
-        <h3>&#128194; Open team report</h3><button class="x" onclick="closeModal('teamOpenModal')"
+        <h3>&#128194; Open Drive report</h3><button class="x" onclick="closeModal('teamOpenModal')"
           title="Close">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="hint">Shared reports saved by your team. Click one to load it.</p>
+        <p class="hint">Reports your team has saved to the Drive. Click one to load it.</p>
         <ul class="drive-list" id="teamFileList"></ul>
       </div>
       <div class="modal-foot">
@@ -1607,7 +1603,7 @@
 
     function updateTeamUI() {
       const el = document.getElementById('teamLinked');
-      if (el) el.textContent = linkedFile ? ('Linked: ' + linkedFile.name) : 'Not linked to a team report';
+      if (el) el.textContent = linkedFile ? ('Linked: ' + linkedFile.name) : 'Not linked to a Drive report';
     }
 
     /* dropdown menu + modals */
@@ -1624,7 +1620,7 @@
       localStorage.setItem(TEAM_URL_KEY, document.getElementById('teamUrlInput').value.trim());
       localStorage.setItem(TEAM_KEY_KEY, document.getElementById('teamKeyInput').value.trim());
       closeModal('teamSettingsModal');
-      toast('Team settings saved.');
+      toast('Drive settings saved.');
     }
 
     /* need a configured endpoint before any call */
@@ -1639,10 +1635,10 @@
       const body = JSON.stringify(Object.assign({ action: action, key: getTeamKey() }, payload || {}));
       let res;
       try { res = await fetch(getTeamUrl(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body }); }
-      catch (e) { throw new Error('Could not reach the team server. Check the Web App URL and your connection.'); }
+      catch (e) { throw new Error('Could not reach the Drive server. Check the Web App URL and your connection.'); }
       if (!res.ok) throw new Error('Server error (' + res.status + ').');
       let data; try { data = await res.json(); }
-      catch (e) { throw new Error('Unexpected response from the team server — double-check the Web App URL (it should end in /exec).'); }
+      catch (e) { throw new Error('Unexpected response from the Drive server — double-check the Web App URL (it should end in /exec).'); }
       if (!data.ok) throw new Error(data.error || 'Request failed.');
       return data;
     }
@@ -1652,25 +1648,25 @@
       if (!teamPreflight()) return;
       try {
         if (linkedFile) {
-          toast('Saving to team…');
+          toast('Saving to Drive…');
           const r = await teamCall('save', { id: linkedFile.id, name: linkedFile.name, report: state });
           setLinked({ id: r.id, name: r.name });
-          toast('Saved to team: ' + r.name);
+          toast('Saved to Drive: ' + r.name);
         } else {
           await teamSaveAsNew();
         }
-      } catch (e) { alert('Team save failed:\n' + e.message); }
+      } catch (e) { alert('Drive save failed:\n' + e.message); }
     }
     async function teamSaveAsNew() {
       if (!teamPreflight()) return;
       try {
-        const name = prompt('Save to the team store as:', state.meta.site || 'IH report');
+        const name = prompt('Save to Drive as:', state.meta.site || 'IH report');
         if (!name) return;
-        toast('Saving to team…');
+        toast('Saving to Drive…');
         const r = await teamCall('save', { name: name, report: state });
         setLinked({ id: r.id, name: r.name });
-        toast('Saved to team: ' + r.name);
-      } catch (e) { alert('Team save failed:\n' + e.message); }
+        toast('Saved to Drive: ' + r.name);
+      } catch (e) { alert('Drive save failed:\n' + e.message); }
     }
     function openTeamOpen() { if (!teamPreflight()) return; openModal('teamOpenModal'); refreshTeamList(); }
     async function refreshTeamList() {
@@ -1679,7 +1675,7 @@
       try {
         const r = await teamCall('list');
         const files = r.files || [];
-        if (!files.length) { ul.innerHTML = '<li class="info"><span class="fm">No team reports yet. Use “Save to Team” first.</span></li>'; return; }
+        if (!files.length) { ul.innerHTML = '<li class="info"><span class="fm">No Drive reports yet. Use “Save to Drive” first.</span></li>'; return; }
         ul.innerHTML = '';
         files.forEach(f => {
           const li = document.createElement('li');
@@ -1700,11 +1696,11 @@
         state = normalizeState(r.report); fillMetaInputs(); renderHaz(); renderProg();
         setLinked({ id: f.id, name: f.name });
         closeModal('teamOpenModal');
-        toast('Loaded from team: ' + f.name);
+        toast('Loaded from Drive: ' + f.name);
       } catch (e) { alert('Could not open report:\n' + e.message); }
     }
     async function deleteTeamFile(f) {
-      if (!confirm('Delete “' + f.name + '” from the team store?\n\nThis removes it for everyone and cannot be undone.')) return;
+      if (!confirm('Delete “' + f.name + '” from the Drive store?\n\nThis removes it for everyone and cannot be undone.')) return;
       try {
         toast('Deleting…');
         await teamCall('delete', { id: f.id });
