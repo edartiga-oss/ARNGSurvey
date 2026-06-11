@@ -9,7 +9,7 @@ Two tabs that share one Site Information panel:
 1. **Hazards & Controls** — per-process inventory of chemical / physical / biological / ergonomic hazards and engineering / administrative / PPE controls (including PPE comment: MFG, model, NRR). Pick a site type (AASF, CSMS, FMS, MATES, UTES) and load its standard processes pre-filled from the example library.
 2. **Program Review, Deficiencies & Recommendations** — the 19 standard OSHA / Army programs with CFR / DA-PAM references, typical program notes, deficiencies, recommendations, and color-coded RAC. Load the standard checklist, then edit.
 
-Both tabs produce a clean, colored, landscape printout (Print / Save as PDF), and your work saves/loads as a single `.json` file. The browser auto-saves between sessions, and the **👥 Team** menu can save to / open from one shared Google Sheet so the whole team works from the same set of reports (see below).
+Both tabs produce a clean, colored, landscape printout (Print / Save as PDF). The **☁ Drive** menu saves to / opens from one shared Google Sheet so the whole team works from the same set of reports, and the browser auto-saves your current work between sessions (see below).
 
 ## Use it
 
@@ -18,16 +18,16 @@ Both tabs produce a clean, colored, landscape printout (Print / Save as PDF), an
 
 ## Shared team store (Google Sheet)
 
-The **👥 Team** menu saves each report to one shared Google Sheet, so the whole team sees and opens the same reports. It works through a small **Google Apps Script web app** ([`apps-script-team-store.gs`](apps-script-team-store.gs)) that reads/writes the Sheet — the script runs as you (the owner), so teammates need **no Google setup of their own** and there's **no OAuth or app verification** to deal with.
+The **☁ Drive** menu saves each report to one shared Google Sheet, so the whole team sees and opens the same reports. It works through a small **Google Apps Script web app** ([`apps-script-team-store.gs`](apps-script-team-store.gs)) that reads/writes the Sheet — the script runs as you (the owner), so teammates need **no Google setup of their own** and there's **no OAuth or app verification** to deal with.
 
 **One-time setup** (full step-by-step is in the comments of `apps-script-team-store.gs`):
 
 1. Create a Google Sheet at [sheet.new](https://sheet.new) — it holds the reports.
 2. In that Sheet: **Extensions → Apps Script**, paste in the contents of `apps-script-team-store.gs`, and set `SHARED_KEY` to a long random string.
 3. **Deploy → New deployment → Web app**, with **Execute as: Me** and **Who has access: Anyone**. Copy the **Web app URL** (ends in `/exec`).
-4. In `index.html`, set `TEAM_API_URL` to that URL and `TEAM_KEY` to your `SHARED_KEY` (near the top of the `<script>`), then redeploy the site. *(To try it before editing the file, paste both into the app's **Team → Team settings…** dialog — they're saved in your browser and override the built-in values.)*
+4. In `index.html`, set `TEAM_API_URL` to that URL and `TEAM_KEY` to your `SHARED_KEY` (near the top of the `<script>`), then redeploy the site. *(To try it before editing the file, paste both into the app's **Drive → Drive settings…** dialog — they're saved in your browser and override the built-in values.)*
 
-Then everyone uses **Save to Team**, **Save as new report…**, and **Open from Team…**. Each report is one row in the Sheet (`id`, `name`, `site`, `siteType`, `date`, `updated`, and the full report `json`); saving an opened report updates its row in place.
+Then everyone uses **Save to Drive**, **Save as new report…**, and **Open from Drive…**. Each report is one row in the Sheet (`id`, `name`, `site`, `siteType`, `date`, `updated`, and the full report `json`); saving an opened report updates its row in place.
 
 > **Security:** the store is reachable by anyone who has both the Web app URL **and** the shared key — and the key ships in the site's public JavaScript, so treat it as internal/low-sensitivity rather than secret. If it leaks, rotate it by changing `SHARED_KEY` in the script and `TEAM_KEY` in the site. For stronger access control, switch to per-user Google sign-in or restrict the web app to a Workspace domain.
 
