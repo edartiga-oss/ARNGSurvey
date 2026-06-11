@@ -689,12 +689,17 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 /* Client-side only: Google Identity Services for OAuth + Drive REST API.
    Scope drive.file = the app can see ONLY the files it creates here. */
 const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
+/* MULTI-USER: paste your published OAuth Client ID between the quotes below and
+   redeploy, so every visitor uses it automatically (each still signs into their
+   own Google account and saves to their own Drive). Leave '' to require each
+   user to enter their own under Drive settings. */
+const DEFAULT_CLIENT_ID='';
 const CLIENT_ID_KEY='ih_gdrive_client_id';
 const LINKED_KEY='ih_gdrive_linked';
 let tokenClient=null, accessToken=null, tokenExpiry=0, pendingAuth=null, tokenClientId=null;
 let linkedFile=loadLinked();   // {id,name} of the Drive file this report is tied to, or null
 
-function getClientId(){ return (localStorage.getItem(CLIENT_ID_KEY)||'').trim(); }
+function getClientId(){ return (localStorage.getItem(CLIENT_ID_KEY)||DEFAULT_CLIENT_ID||'').trim(); }
 function loadLinked(){ try{ return JSON.parse(localStorage.getItem(LINKED_KEY)||'null'); }catch(e){ return null; } }
 function setLinked(f){ linkedFile=f||null; try{ f?localStorage.setItem(LINKED_KEY,JSON.stringify(f)):localStorage.removeItem(LINKED_KEY); }catch(e){} updateDriveUI(); }
 
